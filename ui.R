@@ -42,9 +42,16 @@ paramList <- list(
   )
 
 # transformer feeders grouped by bundle (L1,L2,L3), neutrals omitted
-# feeder_list <- c(5,1,6, 9,7,8, 11,10,12)  # tf1 dec-16 - sep17
-# feeder_list <- c(33,34,35, 41,42,43, 45,46,47)  # tf3 14-jun - 25-jul
-# feeder_list <- c(65,66,68, 70,69,71, 74,75,76)  # tf5 23-aug - now
+tf1 <- c(5,1,6, 9,7,8, 11,10,12)  # tf1 dec-16 - sep17
+tf3 <- c(33,34,35, 41,42,43, 45,46,47)  # tf3 14-jun - 25-jul
+tf5 <- c(65,66,68, 70,69,71, 74,75,76)  # tf5 23-aug - now
+
+date_ranges <- data.frame(
+  "start" = c("2017-01-01", "2017-06-14", "2017-08-23"),
+  "end" = c("2017-09-16", "2017-07-25", format.Date(today()))
+  )
+rownames(date_ranges) <- c("tf1", "tf3", "tf5")
+print(date_ranges)
 
 # list of feeders, grouped by transformer, neutrals omitted
 feederSelectList <- list(
@@ -64,9 +71,13 @@ shinyUI(fluidPage(
       selectInput("feederNumber", "Select Feeder:",
         feederSelectList, selected=feederSelectList[1]
         ),
-
-      dateInput("startDate", "Start Date:", value=ymd(today())-4, format="dd/mm/yyyy"),
-      dateInput("endDate", "End Date:", value=ymd(today()), format="dd/mm/yyyy"),
+      dateRangeInput("dateRange", "Select Date Range:", 
+        format="dd/mm/yyyy",
+        start=today()-4, 
+        end=today(), 
+        min="2017-08-23",
+        max=today()
+        ),
       actionButton("queryBtn", "Start Query"),
       
       br(),

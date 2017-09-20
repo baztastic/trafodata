@@ -36,8 +36,8 @@ shinyServer(function(input, output) {
   # wait for query button to be pressed
   observeEvent(input$queryBtn, {
     # dates from selector
-    start_date <- ymd(input$startDate)
-    end_date <- ymd(input$endDate)
+    start_date <- ymd(input$dateRange[1])
+    end_date <- ymd(input$dateRange[2])
 
     # format the dates for SQL
     start_time <- paste0("'", start_date, " 00:00:00", "'")
