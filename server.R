@@ -64,7 +64,7 @@ shinyServer(function(input, output) {
         )
       # try to make the query
         incProgress(detail="Getting data")
-      # tryCatch({
+      tryCatch({
         feeder_data <<- get_data(con, as.integer(input$feederNumber), start_time, end_time)
         hourly_stats <<- get_hourly_power_stats(con, "real_power", as.integer(input$feederNumber), start_date, end_date)
         # hourly_stats <<- get_hourly_stats(con, input$paramY, as.integer(input$feederNumber), start_date, end_date)
@@ -74,10 +74,10 @@ shinyServer(function(input, output) {
         feeder_data <<- feeder_data[which(feeder_data$temperature < 1000),]
         feeders <<- get_feeders(con)
         # feeder_data$min_of_day <<- format((as_datetime(hms("00:00:00") + as.integer(ddays(feeder_data$min_of_day/1440)))),"%H:%M")
-        # },
-        # error=function(cond){
-        #   return()
-        #   })
+        },
+        error=function(cond){
+          return()
+          })
         incProgress(detail="Closing connection")
       print(paste("Connection closed?", dbDisconnect(con)))
         incProgress(detail="Done!")
