@@ -1,0 +1,133 @@
+# Note: RPostgreSQL requires libpq-dev on linux:
+# sudo apt install libpq-dev
+#
+# This should install missing packages:
+#
+list.of.packages <- c("shiny", "ggplot2", "RPostgreSQL", "lubridate", "ggthemes", "DT")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+library("shiny")
+library("RPostgreSQL")
+library("lubridate")
+require("DT")
+
+# not used for now
+# library("ggplot2")
+# library("ggthemes")
+# library("ggTimeSeries")
+# library("bazRtools") # using local source for convenience instead
+# library("gridExtra")
+# library("plotly")
+
+# list of possible parameters from DB and calculated in baztools.R
+paramList <- list(
+  "Time" = "time_and_date",
+  "Current" = "current",
+  "Voltage" = "voltage",
+  "Real Power" = "real_power",
+  "Reactive Power" = "reac_power",
+  "Apparent Power" = "app_power",
+  "Displacement Power Factor" = "disp_power_factor",
+  "True Power Factor" = "true_power_factor",
+  "Phase ID" = "phase_id",
+  "Current THD" = "current_thd",
+  "Voltage THD" = "voltage_thd",
+  "Temperature" = "temperature",
+  "Frequency" = "frequency",
+  "Apparent Power (True)" = "app_power_t",
+  "Reactive Power (True)" = "reac_power_t",
+  "Minute of Day" = "min_of_day"
+  )
+
+# transformer feeders grouped by bundle (L1,L2,L3), neutrals omitted
+# feeder_list <- c(5,1,6, 9,7,8, 11,10,12)  # tf1 dec-16 - sep17
+# feeder_list <- c(33,34,35, 41,42,43, 45,46,47)  # tf3 14-jun - 25-jul
+# feeder_list <- c(65,66,68, 70,69,71, 74,75,76)  # tf5 23-aug - now
+
+# list of feeders, grouped by transformer, neutrals omitted
+feederSelectList <- list(
+  # '1'=1, '5'=5, '6'=6, '7'=7, '8'=8, '9'=9, '10'=10, '11'=11, '12'=12, 
+  # '33'=33, '34'=34, '35'=35, '41'=41, '42'=42, '43'=43, '45'=45, '46'=46, '47'=47,
+  '65'=65, '66'=66, '68'=68, '69'=69, '70'=70, '71'=71, '74'=74, '75'=75, '76'=76
+  )
+
+# build a shiny UI
+shinyUI(fluidPage(
+  # Application title
+  titlePanel("Electrical Analytics"),
+
+  sidebarLayout(
+    # sidebar with controls
+    sidebarPanel(
+      selectInput("feederNumber", "Select Feeder:",
+        feederSelectList, selected=feederSelectList[1]
+        ),
+
+      dateInput("startDate", "Start Date:", value=ymd(today())-4, format="dd/mm/yyyy"),
+      dateInput("endDate", "End Date:", value=ymd(today()), format="dd/mm/yyyy"),
+      actionButton("queryBtn", "Start Query"),
+      
+      br(),
+      br(),
+      selectInput("paramX", "X Parameter:",
+                   paramList,
+                   selected = paramList[1]),
+
+      selectInput("paramY", "Y Parameter:",
+                   paramList,
+                   selected = paramList[2]),
+
+      selectInput("paramCol", "Colour Parameter:",
+                   paramList,
+                   selected = paramList[10]),
+
+      sliderInput("alpha", 
+                  "Alpha:", 
+                   value = 0.5,
+                   min = 0, 
+                   max = 1,
+                   step = 0.01),
+
+      sliderInput("n", 
+                  "Subsampling percentage:", 
+                   value = 75,
+                   min = 1, 
+                   max = 100),
+
+      radioButtons("smoothOption", "Add trend line?",
+                    list("Yes" = TRUE,
+                      "No" = FALSE
+                      )),
+
+      radioButtons("plotType", "Plot type:",
+                    list("Points" = "geom_point",
+                      "Line" = "geom_line"
+                      )),
+      br()
+    ),
+
+    # main tabbed panel with plots and data representation
+    mainPanel(
+      div(
+        style = "position:relative",
+        plotOutput("plot", 
+                   hover = hoverOpts("plot_hover", delay = 0, delayType = "debounce")),
+        uiOutput("hover_info")
+      ),
+      tabsetPanel(
+        # tabPanel("Plot", plotOutput("plot", hover = hoverOpts("plot_hover", delay = 100, delayType = "debounce"))), 
+        tabPanel("Stats", list(
+            verbatimTextOutput("summary_Feederinfo"),
+            verbatimTextOutput("summary_Xinfo"),
+            verbatimTextOutput("summary_Yinfo"),
+            verbatimTextOutput("summary_Colinfo")          
+          )),
+        tabPanel("Raw Data", DT::dataTableOutput("dataTable")),
+        tabPanel("Feeders", DT::dataTableOutput("feederTable")),
+        tabPanel("Hourly Plot", plotOutput("hourlyplot")),
+        tabPanel("Calendar Plot", plotOutput("calendarplot"))
+      )
+    )
+  )
+))
