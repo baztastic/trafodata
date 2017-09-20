@@ -233,6 +233,7 @@ shinyServer(function(input, output) {
     if(input$queryBtn == 0) return(NULL)
     # hourly_fill <- eval(parse(text = paste0("hourly_stats$", input$paramY)))
     hourly_fill <- hourly_stats$avgreal
+    # hourly_fill <- hourly_stats$avg
 
     plot1 <- ggplot(hourly_stats, 
       aes(hourly_stats$dt, hourly_stats$hour_fac)
@@ -241,26 +242,13 @@ shinyServer(function(input, output) {
       ylim(rev(levels(hourly_stats$hour_fac))) + 
       scale_fill_continuous(low=colors[3,1], high=colors[1,2]) + 
       scale_x_date(date_breaks = "day", date_labels = "%a %d %b") +
-      labs(fill=paste0("Average\n", "Real\nPower"), x="Date", y="Time")
-
-    # plot2 <- ggplot(hourly_stats, 
-    #   aes(dt, hour_fac)
-    #   ) + 
-    #   geom_tile(aes(fill=avgreac)) + 
-    #   ylim(rev(levels(hourly_stats$hour_fac))) + 
-    #   scale_fill_continuous(low=colors[2,1], high=colors[2,2]) + 
     #   scale_x_date(date_breaks = "month", date_labels = "%B") +
-    #   labs(fill=paste0("Average\n", "Reactive\nPower"), x="Date", y="Time")
-    # plot3 <- ggplot(hourly_stats, 
-    #   aes(dt, hour_fac)
-    #   ) + 
-    #   geom_tile(aes(fill=avgapp)) + 
-    #   ylim(rev(levels(hourly_stats$hour_fac))) + 
-    #   scale_fill_continuous(low=colors[3,1], high=colors[3,2]) + 
-    #   scale_x_date(date_breaks = "day", date_labels = "%a %d %b") +
-    #   labs(fill=paste0("Average\n", "Apparent\nPower"), x="Date", y="Time") +
-    #   theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
+      labs(
+        fill=paste0("Average\n", "Real\nPower"), 
+        # fill=paste0("Average\n", input$paramY), 
+        x="Date", 
+        y="Time") +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
     # plist <- list(plot1, plot2)
 
