@@ -18,9 +18,12 @@ Electrical Analytics prototype user interface based on the R Shiny framework.
 1. After installing R, in the interpreter run:
 
         install.packages("shiny")
+        install.packages("devtools")
+        devtools::install_github('Ather-Energy/ggTimeSeries')
 
 2. Clone this repo and navigate its folder and run:
 
+        library("shiny")
         runApp('.')
     
 3. The first lines of ``ui.R`` should install any missing packages.
