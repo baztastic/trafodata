@@ -2,26 +2,26 @@
 
 Electrical Analytics prototype user interface based on the R Shiny framework.
 
+### Required R packages: ###
+
+* ``"shiny"``
+* ``"ggplot2"``
+* ``"RPostgreSQL"``
+* ``"lubridate"``
+* ``"ggthemes"``
+* ``"ggTimeSeries"``
+* ``"gridExtra"``
+* ``"DT"``
+
 ### How do I get set up? ###
-
-Required R packages:
-
-* "shiny"
-* "ggplot2"
-* "RPostgreSQL"
-* "lubridate"
-* "ggthemes"
-* "ggTimeSeries"
-* "gridExtra"
-* "DT"
 
 1. After installing R, in the interpreter run:
 
-    install.packages("shiny")
+        install.packages("shiny")
 
-2. Then navigate to this repo's folder and run:
+2. Clone this repo and navigate its folder and run:
 
-    runApp('.')
+        runApp('.')
     
 3. The first lines of ``ui.R`` should install any missing packages.
 
@@ -29,8 +29,10 @@ Required R packages:
 
 5. On linux, ``libpq-dev`` is required for RPostgreSQL, so (for ubuntu-like distros) run:
 
-    sudo apt install libpq-dev
+        sudo apt install libpq-dev
 
 6. For local TCD access, open a tunnel to the database with this command:
 
-    ssh -L 9000:localhost:5432 [username]@transglobal.cloud.tilaa.com
+        ssh -L 9000:localhost:5432 [username]@transglobal.cloud.tilaa.com
+
+Note, the password for my db read-only user is hard-coded into ``baztools.R`` so please don't share it with anyone.
