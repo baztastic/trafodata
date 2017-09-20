@@ -36,6 +36,7 @@ Electrical Analytics prototype user interface based on the R Shiny framework.
         ssh -L 9000:localhost:5432 [username]@transglobal.cloud.tilaa.com
 
 7. Run the app either:
+
 * From the interpreter using ``runApp('path/to/repo')``
 * From the command line using ``R -e "shiny::runApp('path/to/repo', launch.browser=TRUE)"``
 
