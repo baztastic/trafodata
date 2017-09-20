@@ -3,7 +3,7 @@
 #
 # This should install missing packages:
 #
-list.of.packages <- c("shiny", "ggplot2", "RPostgreSQL", "lubridate", "ggthemes", "DT")
+list.of.packages <- c("shiny", "ggplot2", "RPostgreSQL", "lubridate", "ggthemes", "ggTimeSeries", "DT")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 

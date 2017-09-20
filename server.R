@@ -66,8 +66,8 @@ shinyServer(function(input, output) {
         incProgress(detail="Getting data")
       # tryCatch({
         feeder_data <<- get_data(con, as.integer(input$feederNumber), start_time, end_time)
-        # hourly_stats <<- get_hourly_power_stats(con, "real_power", as.integer(input$feederNumber), start_date, end_date)
-        hourly_stats <<- get_hourly_stats(con, input$paramY, as.integer(input$feederNumber), start_date, end_date)
+        hourly_stats <<- get_hourly_power_stats(con, "real_power", as.integer(input$feederNumber), start_date, end_date)
+        # hourly_stats <<- get_hourly_stats(con, input$paramY, as.integer(input$feederNumber), start_date, end_date)
         date_stats <<- get_date_stats(con, input$paramY, as.integer(input$feederNumber), start_date, end_date)
 
         hourly_stats$hour_fac <<- as.factor(hourly_stats$hour)
@@ -231,7 +231,8 @@ shinyServer(function(input, output) {
 
   output$hourlyplot <- renderPlot({
     if(input$queryBtn == 0) return(NULL)
-    hourly_fill <- eval(parse(text = paste0("hourly_stats$", input$paramY)))
+    # hourly_fill <- eval(parse(text = paste0("hourly_stats$", input$paramY)))
+    hourly_fill <- hourly_stats$avgreal
 
     plot1 <- ggplot(hourly_stats, 
       aes(hourly_stats$dt, hourly_stats$hour_fac)
