@@ -115,7 +115,7 @@ get_data <- function(connection, feeder_id=1, start_time="'2017-06-16 11:00:00'"
 	# if(feeders$phase_type[feeder_id] == 0){
 	# 	dbDisconnect(con)
 	# 	print("Neutral feeders are boring")
-	# 	return(0)
+	# 	return(NULL)
 	# }
 	feeders_info <- get_feeders(connection)
 	queryStr <- paste("SELECT",
@@ -147,7 +147,7 @@ get_data <- function(connection, feeder_id=1, start_time="'2017-06-16 11:00:00'"
 					";", sep=" ")
 	print(paste("Starting query for feeder ", feeder_id, sep=''))
 	queryRtn <- dbGetQuery(connection, queryStr)
-	queryRtn <- calc_power(queryRtn)
+	if(feeders_info$phase_type[feeder_id]!=0) queryRtn <- calc_power(queryRtn)
 	queryRtn['min_of_day'] <- as.integer(format(queryRtn$time_and_date, "%H"))*60 + as.integer(format(queryRtn$time_and_date, "%M"))
 	print("Finished query!")
 	return(queryRtn)

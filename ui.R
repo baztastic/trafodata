@@ -49,9 +49,9 @@ paramList <- list(
 # list of transformers
 trafoSelectList<-list(
   'Please select a transformer'="",
-  'Drogheda'='tf5',
-  'Oranmore'='tf1',
-  'Dundalk'='tf3'
+  'Drogheda (5)'='tf5',
+  'Oranmore (1)'='tf1',
+  'Dundalk (3)'='tf3'
   )
 
 # build a shiny UI
@@ -70,11 +70,11 @@ shinyUI(fluidPage(
         choices=list("First select a transformer"="")
         ),
       dateRangeInput("dateRange", "Select Date Range:", 
-        format="dd/mm/yyyy",
-        start=today()-4, 
-        end=today(), 
-        min="2017-08-23",
-        max=today()
+        format="dd/mm/yyyy"
+        # start=today()-4, 
+        # end=today(), 
+        # min="2017-08-23",
+        # max=today()
         ),
       actionButton("queryBtn", "Start Query"),
       br(),

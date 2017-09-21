@@ -7,12 +7,12 @@ library("ggplot2")
 library("lubridate")
 source("baztools.R")
 require("DT")
-
-# not used for now
 library("ggthemes")
 library("ggTimeSeries")
-# library("bazRtools") # using local source for convenience instead
 library("gridExtra")
+
+# not used for now
+# library("bazRtools") # using local source for convenience instead
 # library("plotly")
 
 # transformer feeders approximately grouped, neutrals omitted
@@ -66,10 +66,10 @@ shinyServer(function(input, output, session) {
         incProgress(detail="Getting data")
       tryCatch({
         feeder_data <<- get_data(con, as.integer(input$feederNumber), start_time, end_time)
+        
         hourly_stats <<- get_hourly_power_stats(con, "real_power", as.integer(input$feederNumber), start_date, end_date)
         # hourly_stats <<- get_hourly_stats(con, input$paramY, as.integer(input$feederNumber), start_date, end_date)
         date_stats <<- get_date_stats(con, input$paramY, as.integer(input$feederNumber), start_date, end_date)
-
         hourly_stats$hour_fac <<- as.factor(hourly_stats$hour)
         feeder_data <<- feeder_data[which(feeder_data$temperature < 1000),]
         feeders <<- get_feeders(con)
@@ -97,17 +97,21 @@ shinyServer(function(input, output, session) {
     d <- d[sample(nrow(d),nrow(d)*subsample),]
     })
 
-  # populate a list of feeders based on the trafoNumber
+  # populate feeder and date selectors based on the trafoNumber
   observe({
     selected_trafo <- input$trafoNumber
     if(selected_trafo=="") return(NULL)
 
     feederSelectList<-rbind(
-      'tf1'=list('1'=1, '5'=5, '6'=6, '7'=7, '8'=8, '9'=9, '10'=10, '11'=11, '12'=12), 
-      'tf3'=list('33'=33, '34'=34, '35'=35, '41'=41, '42'=42, '43'=43, '45'=45, '46'=46, '47'=47), 
-      'tf5'=list('65'=65, '66'=66, '68'=68, '69'=69, '70'=70, '71'=71, '74'=74, '75'=75, '76'=76)
+      'tf1'=list(5, 1, 6,  9, 7, 8,  11,10,12), 
+      'tf3'=list(33,34,35, 41,42,43, 45,46,47), 
+      'tf5'=list(65,66,68, 70,69,71, 74,75,76)
       )
-    colnames(feederSelectList) <- 1:9
+    colnames(feederSelectList) <- c(
+      'A1','A2','A3',
+      'B1','B2','B3',
+      'C1','C2','C3'
+      )
 
     # these are the date ranges that we have data for on each trafo
     # in future should be populated by database query?
