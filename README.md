@@ -16,7 +16,7 @@ Electrical Analytics prototype user interface based on the R Shiny framework.
 
 ### How do I get set up? ###
 
-1. Install R from r-project.org
+1. Install R from [r-project.org](https://www.r-project.org/).
 
 1. After installing R, clone this repo and install the dependencies using:
 
