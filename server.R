@@ -31,7 +31,7 @@ colors <- matrix(
   "#0C2139", "#4F90DC"),  #blue
   nrow=3, ncol=2, byrow=TRUE)
 
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
 
   # wait for query button to be pressed
   observeEvent(input$queryBtn, {
@@ -95,6 +95,39 @@ shinyServer(function(input, output) {
     }
     # take a random subsample of the data
     d <- d[sample(nrow(d),nrow(d)*subsample),]
+    })
+
+  # populate a list of feeders based on the trafoNumber
+  observe({
+    selected_trafo <- input$trafoNumber
+    if(selected_trafo=="") return(NULL)
+
+    feederSelectList<-rbind(
+      'tf1'=list('1'=1, '5'=5, '6'=6, '7'=7, '8'=8, '9'=9, '10'=10, '11'=11, '12'=12), 
+      'tf3'=list('33'=33, '34'=34, '35'=35, '41'=41, '42'=42, '43'=43, '45'=45, '46'=46, '47'=47), 
+      'tf5'=list('65'=65, '66'=66, '68'=68, '69'=69, '70'=70, '71'=71, '74'=74, '75'=75, '76'=76)
+      )
+    colnames(feederSelectList) <- 1:9
+
+    # these are the date ranges that we have data for on each trafo
+    # in future should be populated by database query?
+    date_ranges <- data.frame(stringsAsFactors=FALSE,
+      row.names=c("tf1", "tf3", "tf5"),
+      "min" = c("2017-01-01", "2017-06-14", "2017-08-23"),
+      "max" = c("2017-09-16", "2017-06-25", format.Date(today()))
+      )
+
+    updateSelectInput(session, "feederNumber",
+      choices=feederSelectList[selected_trafo,],
+      selected = feederSelectList[[selected_trafo,1]],
+      )
+
+    updateDateRangeInput(session, "dateRange",
+      min=date_ranges[selected_trafo, "min"],
+      max=date_ranges[selected_trafo, "max"],
+      start=ymd(date_ranges[selected_trafo, "max"])-4,
+      end=date_ranges[selected_trafo, "max"]
+      )
     })
 
   # take the x parameter chosen and form a valid R variable name

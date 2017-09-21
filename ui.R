@@ -42,22 +42,16 @@ paramList <- list(
   )
 
 # transformer feeders grouped by bundle (L1,L2,L3), neutrals omitted
-tf1 <- c(5,1,6, 9,7,8, 11,10,12)  # tf1 dec-16 - sep17
-tf3 <- c(33,34,35, 41,42,43, 45,46,47)  # tf3 14-jun - 25-jul
-tf5 <- c(65,66,68, 70,69,71, 74,75,76)  # tf5 23-aug - now
+# tf1 <- c(5,1,6, 9,7,8, 11,10,12)  # tf1 dec-16 - sep17
+# tf3 <- c(33,34,35, 41,42,43, 45,46,47)  # tf3 14-jun - 25-jul
+# tf5 <- c(65,66,68, 70,69,71, 74,75,76)  # tf5 23-aug - now
 
-date_ranges <- data.frame(
-  "start" = c("2017-01-01", "2017-06-14", "2017-08-23"),
-  "end" = c("2017-09-16", "2017-07-25", format.Date(today()))
-  )
-rownames(date_ranges) <- c("tf1", "tf3", "tf5")
-print(date_ranges)
-
-# list of feeders, grouped by transformer, neutrals omitted
-feederSelectList <- list(
-  # '1'=1, '5'=5, '6'=6, '7'=7, '8'=8, '9'=9, '10'=10, '11'=11, '12'=12, 
-  # '33'=33, '34'=34, '35'=35, '41'=41, '42'=42, '43'=43, '45'=45, '46'=46, '47'=47,
-  '65'=65, '66'=66, '68'=68, '69'=69, '70'=70, '71'=71, '74'=74, '75'=75, '76'=76
+# list of transformers
+trafoSelectList<-list(
+  'Please select a transformer'="",
+  'Drogheda'='tf5',
+  'Oranmore'='tf1',
+  'Dundalk'='tf3'
   )
 
 # build a shiny UI
@@ -68,8 +62,12 @@ shinyUI(fluidPage(
   sidebarLayout(
     # sidebar with controls
     sidebarPanel(
+      selectInput("trafoNumber", "Select Transformer:",
+        choices=trafoSelectList
+        ),
+      # this is populated from server.R once trafoNumber is chosen
       selectInput("feederNumber", "Select Feeder:",
-        feederSelectList, selected=feederSelectList[1]
+        choices=list("First select a transformer"="")
         ),
       dateRangeInput("dateRange", "Select Date Range:", 
         format="dd/mm/yyyy",
@@ -79,7 +77,6 @@ shinyUI(fluidPage(
         max=today()
         ),
       actionButton("queryBtn", "Start Query"),
-      
       br(),
       br(),
       selectInput("paramX", "X Parameter:",
