@@ -56,6 +56,10 @@ trafoSelectList<-list(
 
 # build a shiny UI
 shinyUI(fluidPage(
+  tags$head(
+    tags$link(rel = "stylesheet", type = "text/css", href = "bootstrap-spacelab.min.css"),
+    tags$link(rel = "stylesheet", type = "text/css", href = "overrides.css")
+  ),
   # Application title
   titlePanel("Electrical Analytics"),
 
