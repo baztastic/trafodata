@@ -21,10 +21,11 @@ library("gridExtra")
 # feeder_list <- c(65,66,68, 70,69,71, 74,75,76)  # tf5
 
 # declare global variables
+# TODO: using reactive variables might be better
 feeder_data <- data.frame()
 hourly_stats <- data.frame()
 date_stats <- data.frame()
-feeders <- NULL
+feeders <- data.frame()
 colors <- matrix(
   c("#3E110C", "#F05D4B", #red
   "#082606", "#3EA13B",   #green
@@ -35,6 +36,11 @@ shinyServer(function(input, output, session) {
 
   # wait for query button to be pressed
   observeEvent(input$queryBtn, {
+    # browser()
+    if(input$feederNumber=="") {
+      showNotification("Please select a transformer", duration=3, type='message')
+      return(NULL)
+    }
     # dates from selector
     start_date <- ymd(input$dateRange[1])
     end_date <- ymd(input$dateRange[2])
@@ -65,6 +71,7 @@ shinyServer(function(input, output, session) {
       # try to make the query
         incProgress(detail="Getting data")
       tryCatch({
+        # double arrows (<<-) for global variable assignment
         feeder_data <<- get_data(con, as.integer(input$feederNumber), start_time, end_time)
         
         hourly_stats <<- get_hourly_power_stats(con, "real_power", as.integer(input$feederNumber), start_date, end_date)
@@ -204,7 +211,7 @@ shinyServer(function(input, output, session) {
       title.hjust=0.5,
       barwidth = 30)
     )
-    # print(p)  # show plot
+    # print(p)  # show plot (doesn't work with tooltips)
     p
       # incProgress(1/6)
     })
@@ -305,13 +312,21 @@ shinyServer(function(input, output, session) {
     print(calPlot)
   })
 
-
   output$hover_info <- renderUI({
-    if(input$queryBtn == 0) return(NULL)
+    if(input$queryBtn == 0 || nrow(feeder_data)==0) return(NULL)
     hover <- input$plot_hover
-    point <- nearPoints(feeder_data, hover, xvar=input$paramX, yvar=input$paramY, threshold = 5, maxpoints = 1, addDist = TRUE)
-    # browser()
+    point <- nearPoints(feeder_data, 
+      hover, 
+      xvar=input$paramX, 
+      yvar=input$paramY, 
+      threshold = 5, 
+      maxpoints = 1, 
+      addDist = TRUE
+      )
     if (nrow(point) == 0) return(NULL)
+          
+    # browser()
+    # if (nrow(point) == 0) return(NULL)
 
     # calculate point position INSIDE the image as percent of total dimensions
     # from left (horizontal) and from top (vertical)
@@ -347,5 +362,4 @@ shinyServer(function(input, output, session) {
         )))
     )
   })
-
 })
