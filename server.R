@@ -63,7 +63,7 @@ shinyServer(function(input, output, session) {
             },
             error=function(cond2) {
               print("Couldn't connect to database")
-              showNotification("Couldn't connect to database")
+              showNotification("Couldn't connect to database", type='error')
               return()
             })
           }
