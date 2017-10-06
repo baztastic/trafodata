@@ -10,10 +10,11 @@ require("DT")
 library("ggthemes")
 library("ggTimeSeries")
 library("gridExtra")
+library("ggalt")
 
 # not used for now
 # library("bazRtools") # using local source for convenience instead
-# library("plotly")
+# library("plotly") # way too slow
 
 # transformer feeders approximately grouped, neutrals omitted
 # feeder_list <- c(5,1,6, 9,7,8, 11,10,12)  # tf1
@@ -86,7 +87,7 @@ shinyServer(function(input, output, session) {
           return()
           })
         incProgress(detail="Closing connection")
-      print(paste("Connection closed?", dbDisconnect(con)))
+      try(print(paste("Connection closed?", dbDisconnect(con))))
         incProgress(detail="Done!")
     })
   })
@@ -95,7 +96,18 @@ shinyServer(function(input, output, session) {
   subSampling <- reactive({
     subsample <- input$n/100
     # build data frame
-    d <- data.frame(xdata(), ydata(), coldata())
+    if(input$normOption) {
+      if(input$paramX != "time_and_date") x <- normalise(xdata())
+      else x <- xdata()
+      if(input$paramY != "time_and_date") y <- normalise(ydata())
+      else y <- ydata()
+      # y <- normalise(ydata())
+      d <- data.frame(x, y, coldata())
+    }
+    else {
+      d <- data.frame(xdata(), ydata(), coldata())
+    }
+    # d <- data.frame(xdata(), ydata(), coldata())
     if(input$paramCol == "time_and_date"){
       # to have a continuous colour range, convert dt to integer
       d$coldata.. <- as.integer(d$coldata..)
@@ -125,7 +137,8 @@ shinyServer(function(input, output, session) {
     date_ranges <- data.frame(stringsAsFactors=FALSE,
       row.names=c("tf1", "tf3", "tf5"),
       "min" = c("2017-01-01", "2017-06-14", "2017-08-23"),
-      "max" = c("2017-09-16", "2017-06-25", format.Date(today()))
+      # "max" = c("2017-09-16", "2017-06-25", format.Date(today()))
+      "max" = c(format.Date(today()), "2017-06-25", format.Date(today()))
       )
 
     updateSelectInput(session, "feederNumber",
@@ -195,6 +208,10 @@ shinyServer(function(input, output, session) {
       if(input$smoothOption) p <- p + geom_smooth(method='loess', span=0.05, level=0.99999)
       if(input$plotType == "geom_point") p <- p + geom_point(aes(colour=d$coldata), alpha = input$alpha)
       if(input$plotType == "geom_line") p <- p + geom_line(aes(colour=d$coldata), alpha = input$alpha)
+      # TODO implement grouping
+      # encircle <- TRUE
+      # d_select <- feeder_data[feeder_data$current_thd > 40,]
+      # if(encircle == TRUE) p <- p + geom_encircle(aes(x=input$paramX, y=input$paramY), data=d_select, color="red", size=2, expand=0)
     incProgress(1/6)
     # do some general setup on the plot (from baztools.R)
       p <- setup_plot(p, id)
@@ -211,7 +228,7 @@ shinyServer(function(input, output, session) {
       title.hjust=0.5,
       barwidth = 30)
     )
-    # print(p)  # show plot (doesn't work with tooltips)
+    # print(p)  # show plot (doesn't work with hover tooltips)
     p
       # incProgress(1/6)
     })

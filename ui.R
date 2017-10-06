@@ -7,6 +7,7 @@
 # new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 # if(length(new.packages)) install.packages(new.packages[!new.packages=="ggTimeSeries"])
 # if('ggTimeSeries' %in% new.packages) devtools::install_github('Ather-Energy/ggTimeSeries')
+# devtools::install_github("hrbrmstr/ggalt")
 
 library("shiny")
 library("RPostgreSQL")
@@ -50,8 +51,8 @@ paramList <- list(
 trafoSelectList<-list(
   'Please select a transformer'="",
   'Drogheda (5)'='tf5',
-  'Oranmore (1)'='tf1',
-  'Dundalk (3)'='tf3'
+  'Limerick (1)'='tf1',
+  'Oranmore (3)'='tf3'
   )
 
 # build a shiny UI
@@ -112,6 +113,12 @@ shinyUI(fluidPage(
                     list("Yes" = TRUE,
                       "No" = FALSE
                       )),
+
+      radioButtons("normOption", "Normalise?",
+                    list("Yes" = TRUE,
+                      "No" = FALSE
+                      ),
+                      selected = FALSE),
 
       radioButtons("plotType", "Plot type:",
                     list("Points" = "geom_point",

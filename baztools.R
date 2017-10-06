@@ -60,6 +60,15 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
   }
 }
 
+#' Normalise a list
+#' 
+#' Remap a list of values from 0 - 1
+#' @param list x
+#' @return list x (normalised)
+normalise <- function(x) {
+	return( (x-min(x))/(max(x)-min(x)) )
+}
+
 #' Start SQL
 #' 
 #' Open a connection to the TRANSGLOBAL transformer DB
