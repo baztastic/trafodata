@@ -59,7 +59,10 @@ trafoSelectList<-list(
 shinyUI(fluidPage(
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = "bootstrap-spacelab.min.css"),
-    tags$link(rel = "stylesheet", type = "text/css", href = "overrides.css")
+    tags$link(rel = "stylesheet", type = "text/css", href = "overrides.css"),
+    tags$style(HTML(".col-sm-4 {
+      height: 90vh; overflow-y: auto;
+      }"))
   ),
   # Application title
   titlePanel("Electrical Analytics"),
@@ -123,6 +126,42 @@ shinyUI(fluidPage(
       radioButtons("plotType", "Plot type:",
                     list("Points" = "geom_point",
                       "Line" = "geom_line"
+                      )),
+
+      selectInput("yScaleType", "Y-scale transformation:",
+                    list("No scaling" = "identity",
+                      "Log base 10" = "log10",
+                      "Natural Log" = "log",
+                      "Reciprocal" = "reciprocal",
+                      "Exponential" = "exp",
+                      "Reverse" = "reverse",
+                      "Square root" = "sqrt",
+                      "Arc-sin square root" = "asn",
+                      "Arc-tan" = "atanh",
+                      # "Box-cox" = "boxcox",
+                      "Log + 1" = "log1p",
+                      "Log base 2" = "log2"
+                      # "Inverse sigmoidal" = "logit"
+                      # "Probability" = "probability",
+                      # "Probit" = "probit",
+                      )),
+
+      selectInput("xScaleType", "X-scale transformation:",
+                    list("No scaling" = "identity",
+                      "Log base 10" = "log10",
+                      "Natural Log" = "log",
+                      "Reciprocal" = "reciprocal",
+                      "Exponential" = "exp",
+                      "Reverse" = "reverse",
+                      "Square root" = "sqrt",
+                      "Arc-sin square root" = "asn",
+                      "Arc-tan" = "atanh",
+                      # "Box-cox" = "boxcox",
+                      "Log + 1" = "log1p",
+                      "Log base 2" = "log2"
+                      # "Inverse sigmoidal" = "logit"
+                      # "Probability" = "probability",
+                      # "Probit" = "probit",
                       )),
       br()
     ),

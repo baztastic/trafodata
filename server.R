@@ -221,6 +221,8 @@ shinyServer(function(input, output, session) {
       p <- p + ylab(input$paramY)
     incProgress(1/6)
       p <- p + theme(legend.position = "bottom")
+      if(input$paramX != "time_and_date") p <- p + scale_x_continuous(trans=input$xScaleType)
+      if(input$paramY != "time_and_date") p <- p + scale_y_continuous(trans=input$yScaleType)
       p <- p + scale_colour_continuous(low="blue", high="red",
     guide = guide_colorbar(direction = "horizontal", 
       title=input$paramCol, 
