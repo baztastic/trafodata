@@ -205,7 +205,7 @@ shinyServer(function(input, output, session) {
       p <- ggplot(d, aes(d$x, d$y))
     incProgress(1/6)
     # check options and add lines or points
-      if(input$smoothOption) p <- p + geom_smooth(method='loess', span=0.05, level=0.99999)
+      if(input$smoothOption) p <- p + geom_smooth(method=input$smoothType, span=0.05, level=0.99999)
       if(input$plotType == "geom_point") p <- p + geom_point(aes(colour=d$coldata), alpha = input$alpha)
       if(input$plotType == "geom_line") p <- p + geom_line(aes(colour=d$coldata), alpha = input$alpha)
       # TODO implement grouping

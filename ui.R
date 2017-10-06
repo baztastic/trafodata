@@ -62,7 +62,7 @@ shinyUI(fluidPage(
     tags$link(rel = "stylesheet", type = "text/css", href = "overrides.css"),
     tags$style(HTML(".col-sm-4 {
       height: 90vh; overflow-y: auto;
-      }"))
+      }")) # scroll sidebar
   ),
   # Application title
   titlePanel("Electrical Analytics"),
@@ -116,6 +116,16 @@ shinyUI(fluidPage(
                     list("Yes" = TRUE,
                       "No" = FALSE
                       )),
+
+      selectInput("smoothType", "Fitting type",
+        list("Linear" = "lm",
+          # "glm",
+          # "gam",
+          "Best fit" = "loess"
+          # "rlm"
+          ),
+        selected="loess"
+        ),
 
       radioButtons("normOption", "Normalise?",
                     list("Yes" = TRUE,
