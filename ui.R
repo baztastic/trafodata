@@ -21,6 +21,7 @@ require("DT")
 # library("bazRtools") # using local source for convenience instead
 # library("gridExtra")
 # library("plotly")
+# library("shinyjs") # take a look at usability tweaks
 
 # list of possible parameters from DB and calculated in baztools.R
 paramList <- list(
@@ -32,7 +33,7 @@ paramList <- list(
   "Apparent Power" = "app_power",
   "Displacement Power Factor" = "disp_power_factor",
   "True Power Factor" = "true_power_factor",
-  "Phase ID" = "phase_id",
+  # "Phase ID" = "phase_id",
   "Current THD" = "current_thd",
   "Voltage THD" = "voltage_thd",
   "Temperature" = "temperature",

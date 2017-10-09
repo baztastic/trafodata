@@ -21,12 +21,6 @@ library("ggalt")
 # feeder_list <- c(33,34,35, 41,42,43, 45,46,47)  # tf3
 # feeder_list <- c(65,66,68, 70,69,71, 74,75,76)  # tf5
 
-# declare global variables
-# TODO: using reactive variables might be better
-feeder_data <- data.frame()
-hourly_stats <- data.frame()
-date_stats <- data.frame()
-feeders <- data.frame()
 colors <- matrix(
   c("#3E110C", "#F05D4B", #red
   "#082606", "#3EA13B",   #green
@@ -34,6 +28,11 @@ colors <- matrix(
   nrow=3, ncol=2, byrow=TRUE)
 
 shinyServer(function(input, output, session) {
+  # declare data variables
+  feeder_data <- reactiveValues()
+  hourly_stats <- reactiveValues()
+  date_stats <- reactiveValues()
+  feeders <- reactiveValues()
 
   # wait for query button to be pressed
   observeEvent(input$queryBtn, {
@@ -44,7 +43,7 @@ shinyServer(function(input, output, session) {
     }
     # dates from selector
     start_date <- ymd(input$dateRange[1])
-    end_date <- ymd(input$dateRange[2])
+    end_date <- ymd(input$dateRange[2]+1)
 
     # format the dates for SQL
     start_time <- paste0("'", start_date, " 00:00:00", "'")
