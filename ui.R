@@ -1,27 +1,15 @@
 # Note: RPostgreSQL requires libpq-dev on linux:
 # sudo apt install libpq-dev
 #
-# Run install_deps.R to install missing packages:
-#
-# list.of.packages <- c("shiny", "ggplot2", "lubridate", "ggthemes", "devtools", "ggTimeSeries", "DT", "RPostgreSQL")
-# new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
-# if(length(new.packages)) install.packages(new.packages[!new.packages=="ggTimeSeries"])
-# if('ggTimeSeries' %in% new.packages) devtools::install_github('Ather-Energy/ggTimeSeries')
-# devtools::install_github("hrbrmstr/ggalt")
+# Run install_deps.R to install missing packages
 
-library("shiny")
-library("RPostgreSQL")
-library("lubridate")
-require("DT")
+library(shiny)
+library(RPostgreSQL)
+library(lubridate)
+require(DT)
 
 # not used for now
-# library("ggplot2")
-# library("ggthemes")
-# library("ggTimeSeries")
-# library("bazRtools") # using local source for convenience instead
-# library("gridExtra")
-# library("plotly")
-# library("shinyjs") # take a look at usability tweaks
+# library(shinyjs) # take a look at usability tweaks
 
 # list of possible parameters from DB and calculated in baztools.R
 paramList <- list(
@@ -40,7 +28,9 @@ paramList <- list(
   "Frequency" = "frequency",
   "Apparent Power (True)" = "app_power_t",
   "Reactive Power (True)" = "reac_power_t",
-  "Minute of Day" = "min_of_day"
+  "Minute of Day" = "min_of_day",
+  "Hour of Day" = "hour_of_day",
+  "Day of Week" = "day_of_week"
   )
 
 # transformer feeders grouped by bundle (L1,L2,L3), neutrals omitted
@@ -117,15 +107,17 @@ shinyUI(fluidPage(
                     list("Yes" = TRUE,
                       "No" = FALSE
                       )),
-
-      selectInput("smoothType", "Fitting type",
-        list("Linear" = "lm",
-          # "glm",
-          # "gam",
-          "Best fit" = "loess"
-          # "rlm"
-          ),
-        selected="loess"
+      conditionalPanel(
+        condition = "input.smoothOption == 'TRUE'",  # note this is javascript notation
+          selectInput("smoothType", "Fitting type",
+            list("Linear" = "lm",
+              # "glm",
+              # "gam",
+              "Best fit" = "loess"
+              # "rlm"
+              ),
+            selected="loess"
+            )        
         ),
 
       radioButtons("normOption", "Normalise?",
@@ -180,7 +172,7 @@ shinyUI(fluidPage(
     # main tabbed panel with plots and data representation
     mainPanel(
       div(
-        style = "position:relative",
+        style = "position:relative;",
         plotOutput("plot", 
                    hover = hoverOpts("plot_hover", delay = 0, delayType = "debounce")),
         uiOutput("hover_info")

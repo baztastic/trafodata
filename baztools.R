@@ -60,11 +60,34 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
   }
 }
 
+#' Linear fit equation
+#' 
+#' Generate equation and R-squared for linear fit
+#' @param linear.model m
+#' @return string containing formatted equation
+#' @usage p <- p + geom_text(label = lm_eqn(lm(y ~ x, d)), parse = TRUE)
+
+lm_eqn = function(m) {
+
+  l <- list(a = format(coef(m)[1], digits = 2),
+      b = format(abs(coef(m)[2]), digits = 2),
+      r2 = format(summary(m)$r.squared, digits = 3));
+
+  if (coef(m)[2] >= 0)  {
+    eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2,l)
+  } else {
+    eq <- substitute(italic(y) == a - b %.% italic(x)*","~~italic(r)^2~"="~r2,l)    
+  }
+
+  as.character(as.expression(eq));                 
+}
+
 #' Normalise a list
 #' 
 #' Remap a list of values from 0 - 1
 #' @param list x
 #' @return list x (normalised)
+
 normalise <- function(x) {
 	return( (x-min(x))/(max(x)-min(x)) )
 }
@@ -158,6 +181,9 @@ get_data <- function(connection, feeder_id=1, start_time="'2017-06-16 11:00:00'"
 	queryRtn <- dbGetQuery(connection, queryStr)
 	if(feeders_info$phase_type[feeder_id]!=0) queryRtn <- calc_power(queryRtn)
 	queryRtn['min_of_day'] <- as.integer(format(queryRtn$time_and_date, "%H"))*60 + as.integer(format(queryRtn$time_and_date, "%M"))
+	queryRtn['hour_of_day'] <- as.integer(format(queryRtn$time_and_date, "%H"))
+	queryRtn['day_of_week'] <- as.integer(format(queryRtn$time_and_date, "%u"))
+
 	print("Finished query!")
 	return(queryRtn)
 }

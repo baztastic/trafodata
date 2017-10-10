@@ -1,20 +1,28 @@
 # for local TCD access, open tunnel to database with this command:
 # ssh -L 9000:localhost:5432 murphyb8@transglobal.cloud.tilaa.com
 
-library("shiny")
-library("RPostgreSQL")
-library("ggplot2")
-library("lubridate")
+# TODO:
+# Clustering with ggalt
+# Usability enhancements with shinyjs
+# Cache previous queries
+# Fix equation display on or below chart
+# Do something about plot titles
+
+library(shiny)
+library(RPostgreSQL)
+library(ggplot2)
+library(lubridate)
 source("baztools.R")
-require("DT")
-library("ggthemes")
-library("ggTimeSeries")
-library("gridExtra")
-library("ggalt")
+require(DT)
+library(ggthemes)
+library(ggTimeSeries)
+library(gridExtra)
 
 # not used for now
 # library("bazRtools") # using local source for convenience instead
 # library("plotly") # way too slow
+# library(ggalt) # for clustering
+# library(ggpmisc) # use stat_poly_eq to show fitted equation
 
 # transformer feeders approximately grouped, neutrals omitted
 # feeder_list <- c(5,1,6, 9,7,8, 11,10,12)  # tf1
@@ -26,6 +34,13 @@ colors <- matrix(
   "#082606", "#3EA13B",   #green
   "#0C2139", "#4F90DC"),  #blue
   nrow=3, ncol=2, byrow=TRUE)
+
+trafoSelectList<-list(
+  'Please select a transformer'="",
+  'Drogheda'='tf5',
+  'Limerick'='tf1',
+  'Oranmore'='tf3'
+  )
 
 shinyServer(function(input, output, session) {
   # declare data variables
@@ -46,8 +61,8 @@ shinyServer(function(input, output, session) {
     end_date <- ymd(input$dateRange[2]+1)
 
     # format the dates for SQL
-    start_time <- paste0("'", start_date, " 00:00:00", "'")
-    end_time <- paste0("'", end_date, " 23:59:59", "'")
+    start_time <- paste0("'", start_date-1, " 23:00:00", "'")
+    end_time <- paste0("'", end_date, " 22:59:59", "'")
 
     # try to connect to the database
     withProgress(message="Please Wait", style="notification", {
@@ -70,17 +85,20 @@ shinyServer(function(input, output, session) {
         )
       # try to make the query
         incProgress(detail="Getting data")
+
       tryCatch({
         # double arrows (<<-) for global variable assignment
         feeder_data <<- get_data(con, as.integer(input$feederNumber), start_time, end_time)
-        
+
         hourly_stats <<- get_hourly_power_stats(con, "real_power", as.integer(input$feederNumber), start_date, end_date)
         # hourly_stats <<- get_hourly_stats(con, input$paramY, as.integer(input$feederNumber), start_date, end_date)
         date_stats <<- get_date_stats(con, input$paramY, as.integer(input$feederNumber), start_date, end_date)
         hourly_stats$hour_fac <<- as.factor(hourly_stats$hour)
-        feeder_data <<- feeder_data[which(feeder_data$temperature < 1000),]
         feeders <<- get_feeders(con)
-        # feeder_data$min_of_day <<- format((as_datetime(hms("00:00:00") + as.integer(ddays(feeder_data$min_of_day/1440)))),"%H:%M")
+
+        # do some selection of data to remove outliers
+        # feeder_data <<- feeder_data[which(feeder_data$temperature < 1000),]
+        # feeder_data <<- feeder_data[which(feeder_data$current_thd < 64),]
         },
         error=function(cond){
           return()
@@ -196,6 +214,7 @@ shinyServer(function(input, output, session) {
   output$plot <- renderPlot({
     # everything to be refreshed needs to be connected to queryBtn
       btnPress <- input$queryBtn
+      if(btnPress == 0) return(NULL)
     withProgress(message="Rendering Plot", detail="Please Wait", {
     # make data frame
       d <- subSampling()
@@ -204,7 +223,16 @@ shinyServer(function(input, output, session) {
       p <- ggplot(d, aes(d$x, d$y))
     incProgress(1/6)
     # check options and add lines or points
-      if(input$smoothOption) p <- p + geom_smooth(method=input$smoothType, span=0.05, level=0.99999)
+      if(input$smoothOption) {
+        p <- p + geom_smooth(
+          method=input$smoothType, 
+          span=0.05, 
+          level=0.99999, 
+          na.rm=TRUE)
+        # if(input$smoothType == 'lm' & input$normOption == TRUE) {
+        #   p <- p + geom_text(x = 0, y = 0, label = lm_eqn(lm(d$y ~ d$x, d)), parse = TRUE, hjust = 0)
+        # }
+      }
       if(input$plotType == "geom_point") p <- p + geom_point(aes(colour=d$coldata), alpha = input$alpha)
       if(input$plotType == "geom_line") p <- p + geom_line(aes(colour=d$coldata), alpha = input$alpha)
       # TODO implement grouping
@@ -218,6 +246,14 @@ shinyServer(function(input, output, session) {
     # labels and legends
       p <- p + xlab(input$paramX)
       p <- p + ylab(input$paramY)
+      # p <- p + ggtitle(paste(input$trafoNumber, input$feederNumber))
+      # p <- p + ggtitle(paste(
+      #   names(trafoSelectList[which(trafoSelectList == input$trafoNumber)]), 
+      #   "Feeder",
+      #   input$feederNumber
+      #   ))
+      # browser()
+      
     incProgress(1/6)
       p <- p + theme(legend.position = "bottom")
       if(input$paramX != "time_and_date") p <- p + scale_x_continuous(trans=input$xScaleType)
@@ -359,7 +395,7 @@ shinyServer(function(input, output, session) {
     # background color is set so tooltip is a bit transparent
     # z-index is set so we are sure are tooltip will be on top
     style <- paste0("position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
-                    "left:", left_px + 2, "px; top:", top_px + 2, "px;")
+                    "left:", left_px - 150, "px; top:", top_px + 2, "px;")
 
     # do some formatting on the point data    
     pointX <- eval(parse(text = paste0("point$", input$paramX)))
