@@ -88,7 +88,7 @@ shinyUI(fluidPage(
 
       selectInput("paramCol", "Colour Parameter:",
                    paramList,
-                   selected = paramList[10]),
+                   selected = paramList[9]),
 
       sliderInput("alpha", 
                   "Alpha:", 
@@ -106,7 +106,9 @@ shinyUI(fluidPage(
       radioButtons("smoothOption", "Add trend line?",
                     list("Yes" = TRUE,
                       "No" = FALSE
-                      )),
+                      ),
+                    selected=TRUE
+                    ),
       conditionalPanel(
         condition = "input.smoothOption == 'TRUE'",  # note this is javascript notation
           selectInput("smoothType", "Fitting type",
@@ -119,6 +121,13 @@ shinyUI(fluidPage(
             selected="loess"
             )        
         ),
+      # too complicated - need to guess starting values
+      # textInput("arbFitting",
+      #   label="Arbitrary Fitting Function:",
+      #   value="y ~ a * I(log(x + b)) + c",
+      #   width="100%",
+      #   placeholder="e.g. y ~ x"
+      #   ),
 
       radioButtons("normOption", "Normalise?",
                     list("Yes" = TRUE,
@@ -129,7 +138,8 @@ shinyUI(fluidPage(
       radioButtons("plotType", "Plot type:",
                     list("Points" = "geom_point",
                       "Line" = "geom_line"
-                      )),
+                      ),
+                    selected = "geom_point"),
 
       selectInput("yScaleType", "Y-scale transformation:",
                     list("No scaling" = "identity",
@@ -147,7 +157,9 @@ shinyUI(fluidPage(
                       # "Inverse sigmoidal" = "logit"
                       # "Probability" = "probability",
                       # "Probit" = "probit",
-                      )),
+                      ),
+                    selected="identity"
+                    ),
 
       selectInput("xScaleType", "X-scale transformation:",
                     list("No scaling" = "identity",
@@ -165,7 +177,9 @@ shinyUI(fluidPage(
                       # "Inverse sigmoidal" = "logit"
                       # "Probability" = "probability",
                       # "Probit" = "probit",
-                      )),
+                      ),
+                    selected="identity"
+                    ),
       br()
     ),
 

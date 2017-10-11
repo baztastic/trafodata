@@ -60,28 +60,6 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
   }
 }
 
-#' Linear fit equation
-#' 
-#' Generate equation and R-squared for linear fit
-#' @param linear.model m
-#' @return string containing formatted equation
-#' @usage p <- p + geom_text(label = lm_eqn(lm(y ~ x, d)), parse = TRUE)
-
-lm_eqn = function(m) {
-
-  l <- list(a = format(coef(m)[1], digits = 2),
-      b = format(abs(coef(m)[2]), digits = 2),
-      r2 = format(summary(m)$r.squared, digits = 3));
-
-  if (coef(m)[2] >= 0)  {
-    eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2,l)
-  } else {
-    eq <- substitute(italic(y) == a - b %.% italic(x)*","~~italic(r)^2~"="~r2,l)    
-  }
-
-  as.character(as.expression(eq));                 
-}
-
 #' Normalise a list
 #' 
 #' Remap a list of values from 0 - 1

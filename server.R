@@ -22,7 +22,7 @@ library(gridExtra)
 # library("bazRtools") # using local source for convenience instead
 # library("plotly") # way too slow
 # library(ggalt) # for clustering
-# library(ggpmisc) # use stat_poly_eq to show fitted equation
+library(ggpmisc) # use stat_poly_eq to show fitted equation
 
 # transformer feeders approximately grouped, neutrals omitted
 # feeder_list <- c(5,1,6, 9,7,8, 11,10,12)  # tf1
@@ -229,12 +229,37 @@ shinyServer(function(input, output, session) {
           span=0.05, 
           level=0.99999, 
           na.rm=TRUE)
-        # if(input$smoothType == 'lm' & input$normOption == TRUE) {
-        #   p <- p + geom_text(x = 0, y = 0, label = lm_eqn(lm(d$y ~ d$x, d)), parse = TRUE, hjust = 0)
-        # }
       }
       if(input$plotType == "geom_point") p <- p + geom_point(aes(colour=d$coldata), alpha = input$alpha)
       if(input$plotType == "geom_line") p <- p + geom_line(aes(colour=d$coldata), alpha = input$alpha)
+      
+      # TODO check whether arbitrary fitting is useful (or possible!)
+      # if(input$arbFitting != "") {
+      #   tryCatch({
+      #       attach(d) # so I can refer directly to x and y
+      #       myFormula <- eval(parse(text = input$arbFitting))
+      #       print(myFormula)
+      #       # p <- p + geom_smooth(method="loess", formula=myFormula)
+      #       # p <- p + stat_poly_eq(formula = myFormula,
+      #       #   aes(label = paste(..eq.label.., ..rr.label.., sep = "*plain(\",\")~")),
+      #       #   parse = TRUE)
+      #       regressor <- lm(formula = myFormula)
+      #       print(summary(regressor))
+      #       },
+      #       warning = function(w){
+      #         showNotification("Warning", duration=1, type='message')
+      #         return(NULL)
+      #       },
+      #       error = function(e){
+      #         showNotification("Invalid function. Must be of form y ~ x", duration=1, type='message')
+      #         return(NULL)
+      #       },
+      #       finally={
+      #         detach(d) # make sure d is detached so it won't mask future fits
+      #       }
+      #     )
+      #   }
+
       # TODO implement grouping
       # encircle <- TRUE
       # d_select <- feeder_data[feeder_data$current_thd > 40,]
@@ -246,6 +271,8 @@ shinyServer(function(input, output, session) {
     # labels and legends
       p <- p + xlab(input$paramX)
       p <- p + ylab(input$paramY)
+
+      # TODO add a nice title
       # p <- p + ggtitle(paste(input$trafoNumber, input$feederNumber))
       # p <- p + ggtitle(paste(
       #   names(trafoSelectList[which(trafoSelectList == input$trafoNumber)]), 
@@ -397,13 +424,17 @@ shinyServer(function(input, output, session) {
     style <- paste0("position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
                     "left:", left_px - 150, "px; top:", top_px + 2, "px;")
 
-    # do some formatting on the point data    
+    # do some formatting on the point data
+    days_of_week <- list("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
     pointX <- eval(parse(text = paste0("point$", input$paramX)))
     pointY <- eval(parse(text = paste0("point$", input$paramY)))
     pointZ <- eval(parse(text = paste0("point$", input$paramCol)))
     if(input$paramX == "min_of_day") pointX <- format((as_datetime(hms("00:00:00") + as.integer(ddays(pointX/1440)))),"%H:%M")
     if(input$paramY == "min_of_day") pointY <- format((as_datetime(hms("00:00:00") + as.integer(ddays(pointY/1440)))),"%H:%M")
     if(input$paramCol == "min_of_day") pointZ <- format((as_datetime(hms("00:00:00") + as.integer(ddays(pointZ/1440)))),"%H:%M")
+    if(input$paramX == "day_of_week") pointX <-   days_of_week[as.integer(pointX)]
+    if(input$paramY == "day_of_week") pointY <-   days_of_week[as.integer(pointY)]
+    if(input$paramCol == "day_of_week") pointZ <- days_of_week[as.integer(pointZ)]
 
     # actual tooltip created as wellPanel
     wellPanel(
