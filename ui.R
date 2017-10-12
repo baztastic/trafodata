@@ -35,7 +35,8 @@ paramList <- list(
   "Day of Week" = "day_of_week",
   "L1 Voltage" = "v1",
   "L2 Voltage" = "v2",
-  "L3 Voltage" = "v3"
+  "L3 Voltage" = "v3",
+  "Problem Phase" = "problem_phase"
   )
 
 # transformer feeders grouped by bundle (L1,L2,L3), neutrals omitted
