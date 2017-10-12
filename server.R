@@ -88,7 +88,7 @@ shinyServer(function(input, output, session) {
 
       tryCatch({
         # double arrows (<<-) for global variable assignment
-        feeder_data <<- get_data(con, as.integer(input$feederNumber), start_time, end_time)
+        feeder_data <<- get_data(con, as.integer(input$feederNumber), start_time, end_time, imbal=input$imbal)
 
         hourly_stats <<- get_hourly_power_stats(con, "real_power", as.integer(input$feederNumber), start_date, end_date)
         # hourly_stats <<- get_hourly_stats(con, input$paramY, as.integer(input$feederNumber), start_date, end_date)

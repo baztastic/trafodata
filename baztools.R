@@ -121,7 +121,7 @@ get_feeders <- function(connection) {
 #' @param character End time for query. Make sure to include single quotes around string
 #' @return data.frame containing query data
 
-get_data <- function(connection, feeder_id=1, start_time="'2017-06-16 11:00:00'", end_time="'2017-06-24 13:00:00'") {
+get_data <- function(connection, feeder_id=1, start_time="'2017-06-16 11:00:00'", end_time="'2017-06-24 13:00:00'", imbal=TRUE) {
 	# if(feeders$phase_type[feeder_id] == 0){
 	# 	dbDisconnect(con)
 	# 	print("Neutral feeders are boring")
@@ -161,7 +161,10 @@ get_data <- function(connection, feeder_id=1, start_time="'2017-06-16 11:00:00'"
 	queryRtn['min_of_day'] <- as.integer(format(queryRtn$time_and_date, "%H"))*60 + as.integer(format(queryRtn$time_and_date, "%M"))
 	queryRtn['hour_of_day'] <- as.integer(format(queryRtn$time_and_date, "%H"))
 	queryRtn['day_of_week'] <- as.integer(format(queryRtn$time_and_date, "%u"))
-
+	if(imbal) {
+		imbalance <- get_voltage_imbalance(connection, feeder_id, start_time, end_time)
+		queryRtn <- merge(queryRtn, imbalance)  # join data frames on time_and_date
+	}
 	print("Finished query!")
 	return(queryRtn)
 }
@@ -327,6 +330,58 @@ get_hourly_power_stats <- function(connection, param="real_power", id=1, start_d
 	queryRtn$minreac <- sqrt(queryRtn$minapp^2 - queryRtn$minreal^2)
 	queryRtn$avgreac <- sqrt(queryRtn$avgapp^2 - queryRtn$avgreal^2)
 	queryRtn$maxreac <- sqrt(queryRtn$maxapp^2 - queryRtn$maxreal^2)
+	return(queryRtn)
+}
+
+#' Get voltage imbalance
+#' 
+#' Get voltage imbalance for a specific trafo - needs input from all phases on that trafo
+#' @param connection SQL connection object
+#' @param int Feeder id - get the trafo from feeders_info
+#' @param character Start time for query. Make sure to include single quotes around string
+#' @param character End time for query. Make sure to include single quotes around string
+#' @return data.frame containing query data
+
+get_voltage_imbalance <- function(connection, feeder_id=1, start_time="'2017-06-16 11:00:00'", end_time="'2017-06-24 13:00:00'") {
+	# if(feeders$phase_type[feeder_id] == 0){
+	# 	dbDisconnect(con)
+	# 	print("Neutral feeders are boring")
+	# 	return(NULL)
+	# }
+	feeders_info <- get_feeders(connection)
+	trafo_id <- feeders_info$transformer[feeder_id]
+	trafo_feeders <- feeders_info[which(feeders_info$transformer == trafo_id),]
+	# throw out phase_type=0 since there are only 3 phases
+	phase_ids <- unique(trafo_feeders$phase[which(trafo_feeders$phase_type != 0)])
+	phase_ids <- sort(phase_ids)
+	queryStr <- paste("SELECT",
+					"p1.time_and_date AS time_and_date,", 
+					"p1.phase_id AS id1,", 
+					"p1.voltage AS v1,", 
+					"p2.phase_id AS id2,", 
+					"p2.voltage AS v2,", 
+					"p3.phase_id AS id3,", 
+					"p3.voltage AS v3",
+					"FROM phase_stats AS p1",
+					"JOIN phase_stats AS p2 ON p2.time_and_date = p1.time_and_date",
+					"JOIN phase_stats AS p3 ON p3.time_and_date = p1.time_and_date",
+					"WHERE p1.phase_id =", phase_ids[1],
+					"AND p2.phase_id =", phase_ids[2],
+					"AND p3.phase_id =", phase_ids[3],
+					"AND p1.time_and_date BETWEEN",
+					start_time,
+					"AND",
+					end_time,
+					"ORDER BY p1.time_and_date ASC",
+					";", sep=" ")
+	print(paste("Starting imbalance query for transformer ", trafo_id, sep=''))
+	queryRtn <- dbGetQuery(connection, queryStr)
+	voltages <- list(queryRtn$v1, queryRtn$v2, queryRtn$v3)
+	V_max <- unlist(lapply(data.table::transpose(voltages), max))
+	V_mean <- unlist(lapply(data.table::transpose(voltages), mean))
+	imbalance <- 100 * (V_max - V_mean) / V_mean
+	queryRtn <- cbind(queryRtn, imbalance)
+	print("Finished imbalance query!")
 	return(queryRtn)
 }
 

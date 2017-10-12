@@ -11,11 +11,13 @@ require(DT)
 # not used for now
 # library(shinyjs) # take a look at usability tweaks
 
+# TODO if imbal==FALSE, remove imbalance, v1-3 options
 # list of possible parameters from DB and calculated in baztools.R
 paramList <- list(
   "Time" = "time_and_date",
   "Current" = "current",
   "Voltage" = "voltage",
+  "Voltage Imbalance" = "imbalance",
   "Real Power" = "real_power",
   "Reactive Power" = "reac_power",
   "Apparent Power" = "app_power",
@@ -30,7 +32,10 @@ paramList <- list(
   "Reactive Power (True)" = "reac_power_t",
   "Minute of Day" = "min_of_day",
   "Hour of Day" = "hour_of_day",
-  "Day of Week" = "day_of_week"
+  "Day of Week" = "day_of_week",
+  "L1 Voltage" = "v1",
+  "L2 Voltage" = "v2",
+  "L3 Voltage" = "v3",
   )
 
 # transformer feeders grouped by bundle (L1,L2,L3), neutrals omitted
@@ -42,8 +47,8 @@ paramList <- list(
 trafoSelectList<-list(
   'Please select a transformer'="",
   'Drogheda (5)'='tf5',
-  'Limerick (1)'='tf1',
-  'Oranmore (3)'='tf3'
+  'Limerick (1)'='tf1'
+  # 'Oranmore (3)'='tf3'
   )
 
 # build a shiny UI
@@ -88,7 +93,7 @@ shinyUI(fluidPage(
 
       selectInput("paramCol", "Colour Parameter:",
                    paramList,
-                   selected = paramList[9]),
+                   selected = paramList[10]),
 
       sliderInput("alpha", 
                   "Alpha:", 
@@ -102,6 +107,12 @@ shinyUI(fluidPage(
                    value = 75,
                    min = 1, 
                    max = 100),
+      radioButtons("imbal", "Voltage imbalance?",
+                    list("Yes" = TRUE,
+                      "No" = FALSE
+                      ),
+                    selected=TRUE
+                    ),
 
       radioButtons("smoothOption", "Add trend line?",
                     list("Yes" = TRUE,
