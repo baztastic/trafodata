@@ -377,9 +377,11 @@ get_voltage_imbalance <- function(connection, feeder_id=1, start_time="'2017-06-
 	print(paste("Starting imbalance query for transformer ", trafo_id, sep=''))
 	queryRtn <- dbGetQuery(connection, queryStr)
 	voltages <- list(queryRtn$v1, queryRtn$v2, queryRtn$v3)
-	V_max <- unlist(lapply(data.table::transpose(voltages), max))
 	V_mean <- unlist(lapply(data.table::transpose(voltages), mean))
-	imbalance <- 100 * (V_max - V_mean) / V_mean
+	V_delta <- list(abs(voltages[[1]]-V_mean), abs(voltages[[2]]-V_mean), abs(voltages[[3]]-V_mean))
+	# V_max <- unlist(lapply(data.table::transpose(voltages), max))  # wrong!
+	V_max <- unlist(lapply(data.table::transpose(V_delta), max))
+	imbalance <- 100 * (V_max) / V_mean
 	queryRtn <- cbind(queryRtn, imbalance)
 	print("Finished imbalance query!")
 	return(queryRtn)
