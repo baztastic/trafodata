@@ -41,7 +41,7 @@ paramList <- list(
 
 # transformer feeders grouped by bundle (L1,L2,L3), neutrals omitted
 # tf1 <- c(5,1,6, 9,7,8, 11,10,12)  # tf1 dec-16 - sep17
-# tf3 <- c(33,34,35, 41,42,43, 45,46,47)  # tf3 14-jun - 25-jul
+# tf6 <- c(33,34,35, 41,42,43, 45,46,47)  # tf6 14-jun - 25-jul
 # tf5 <- c(65,66,68, 70,69,71, 74,75,76)  # tf5 23-aug - now
 
 # list of transformers
@@ -49,7 +49,7 @@ trafoSelectList<-list(
   'Please select a transformer'="",
   'Drogheda (5)'='tf5',
   'Limerick (1)'='tf1'
-  # 'Oranmore (3)'='tf3'
+  # 'Oranmore (6)'='tf6'
   )
 
 # build a shiny UI

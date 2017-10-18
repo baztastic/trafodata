@@ -17,6 +17,7 @@ require(DT)
 library(ggthemes)
 library(ggTimeSeries)
 library(gridExtra)
+library(ggExtra)
 
 # not used for now
 # library("bazRtools") # using local source for convenience instead
@@ -26,7 +27,7 @@ library(ggpmisc) # use stat_poly_eq to show fitted equation
 
 # transformer feeders approximately grouped, neutrals omitted
 # feeder_list <- c(5,1,6, 9,7,8, 11,10,12)  # tf1
-# feeder_list <- c(33,34,35, 41,42,43, 45,46,47)  # tf3
+# feeder_list <- c(33,34,35, 41,42,43, 45,46,47)  # tf6
 # feeder_list <- c(65,66,68, 70,69,71, 74,75,76)  # tf5
 
 colors <- matrix(
@@ -39,7 +40,7 @@ trafoSelectList<-list(
   'Please select a transformer'="",
   'Drogheda'='tf5',
   'Limerick'='tf1',
-  'Oranmore'='tf3'
+  'Oranmore'='tf6'
   )
 
 shinyServer(function(input, output, session) {
@@ -141,6 +142,7 @@ shinyServer(function(input, output, session) {
     feederSelectList<-rbind(
       'tf1'=list(5, 1, 6,  9, 7, 8,  11,10,12), 
       'tf3'=list(33,34,35, 41,42,43, 45,46,47), 
+      'tf6'=list(81,82,83, 89,90,91, 93,94,95), 
       'tf5'=list(65,66,68, 70,69,71, 74,75,76)
       )
     colnames(feederSelectList) <- c(
@@ -152,7 +154,7 @@ shinyServer(function(input, output, session) {
     # these are the date ranges that we have data for on each trafo
     # in future should be populated by database query?
     date_ranges <- data.frame(stringsAsFactors=FALSE,
-      row.names=c("tf1", "tf3", "tf5"),
+      row.names=c("tf1", "tf6", "tf5"),
       "min" = c("2017-01-01", "2017-06-14", "2017-08-23"),
       # "max" = c("2017-09-16", "2017-06-25", format.Date(today()))
       "max" = c(format.Date(today()), "2017-06-25", format.Date(today()))
@@ -293,6 +295,8 @@ shinyServer(function(input, output, session) {
       barwidth = 30)
     )
     # print(p)  # show plot (doesn't work with hover tooltips)
+    # ggMarginal(p, type = "histogram", fill="transparent")
+
     p
       # incProgress(1/6)
     })

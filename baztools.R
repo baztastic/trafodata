@@ -384,9 +384,8 @@ get_voltage_imbalance <- function(connection, feeder_id=1, start_time="'2017-06-
 	imbalance <- 100 * (V_max) / V_mean
 	problem_phase <- cbind(V_delta[[1]] == V_max, V_delta[[2]] == V_max, V_delta[[3]] == V_max)
 	problem_phase <- (problem_phase %*% phase_ids)
-	problem_phase[!(problem_phase %in% phase_ids)] <- NA
-	# problem_phase <- problem_phase[which(problem_phase <= max(phase_ids))]
-	# browser()
+	problem_phase[!(problem_phase %in% phase_ids)] <- NA # if more than one phase is a problem, discard that point
+	
 	queryRtn <- cbind(queryRtn, imbalance, problem_phase)
 	print("Finished imbalance query!")
 	return(queryRtn)
