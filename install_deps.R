@@ -8,7 +8,8 @@ list.of.packages <- c(
 	"DT", 
 	"RPostgreSQL", 
 	"ggpmisc",
-	"dplyr"
+	"dplyr",
+	"ggalt"
 	)
 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
