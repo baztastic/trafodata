@@ -1,4 +1,15 @@
-list.of.packages <- c("shiny", "ggplot2", "lubridate", "ggthemes", "devtools", "ggTimeSeries", "DT", "RPostgreSQL", "ggpmisc")
+list.of.packages <- c(
+	"shiny", 
+	"ggplot2", 
+	"lubridate", 
+	"ggthemes", 
+	"devtools", 
+	"ggTimeSeries", 
+	"DT", 
+	"RPostgreSQL", 
+	"ggpmisc",
+	"dplyr"
+	)
 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 

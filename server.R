@@ -18,6 +18,7 @@ library(ggthemes)
 library(ggTimeSeries)
 library(gridExtra)
 library(ggExtra)
+library(dplyr) # for grouping by hour and day etc
 
 # not used for now
 # library("bazRtools") # using local source for convenience instead
@@ -47,7 +48,7 @@ shinyServer(function(input, output, session) {
   # declare data variables
   feeder_data <- reactiveValues()
   hourly_stats <- reactiveValues()
-  date_stats <- reactiveValues()
+  daily_stats <- reactiveValues()
   feeders <- reactiveValues()
 
   # wait for query button to be pressed
@@ -90,16 +91,15 @@ shinyServer(function(input, output, session) {
       tryCatch({
         # double arrows (<<-) for global variable assignment
         feeder_data <<- get_data(con, as.integer(input$feederNumber), start_time, end_time, imbal=input$imbal)
-
-        hourly_stats <<- get_hourly_power_stats(con, "real_power", as.integer(input$feederNumber), start_date, end_date)
-        # hourly_stats <<- get_hourly_stats(con, input$paramY, as.integer(input$feederNumber), start_date, end_date)
-        date_stats <<- get_date_stats(con, input$paramY, as.integer(input$feederNumber), start_date, end_date)
-        hourly_stats$hour_fac <<- as.factor(hourly_stats$hour)
         feeders <<- get_feeders(con)
 
         # do some selection of data to remove outliers
-        # feeder_data <<- feeder_data[which(feeder_data$temperature < 1000),]
+        feeder_data <<- feeder_data[which(feeder_data$temperature < 1000),]
         # feeder_data <<- feeder_data[which(feeder_data$current_thd < 64),]
+
+        hourly_stats <<- calc_hourly_stats(feeder_data)
+        hourly_stats$hour_fac <<- as.factor(hour(hourly_stats$hour))
+        daily_stats <<- calc_daily_stats(feeder_data)
         },
         error=function(cond){
           return()
@@ -360,12 +360,12 @@ shinyServer(function(input, output, session) {
 
   output$hourlyplot <- renderPlot({
     if(input$queryBtn == 0) return(NULL)
-    # hourly_fill <- eval(parse(text = paste0("hourly_stats$", input$paramY)))
-    hourly_fill <- hourly_stats$avgreal
+    hourly_fill <- eval(parse(text = paste0("hourly_stats$", input$paramY, "_mean")))
+    # hourly_fill <- hourly_stats$avgreal
     # hourly_fill <- hourly_stats$avg
 
     plot1 <- ggplot(hourly_stats, 
-      aes(hourly_stats$dt, hourly_stats$hour_fac)
+      aes(as_date(hourly_stats$hour), hourly_stats$hour_fac)
       ) + 
       geom_tile(aes(fill=hourly_fill)) + 
       ylim(rev(levels(hourly_stats$hour_fac))) + 
@@ -373,7 +373,7 @@ shinyServer(function(input, output, session) {
       scale_x_date(date_breaks = "day", date_labels = "%a %d %b") +
     #   scale_x_date(date_breaks = "month", date_labels = "%B") +
       labs(
-        fill=paste0("Average\n", "Real\nPower"), 
+        fill=paste0("Average\n", input$paramY), 
         # fill=paste0("Average\n", input$paramY), 
         x="Date", 
         y="Time") +
@@ -388,7 +388,7 @@ shinyServer(function(input, output, session) {
   output$calendarplot <- renderPlot({
     if(input$queryBtn == 0) return(NULL)
     # options for data to plot are min, max, avg, std
-    calPlot <- ggplot_calendar_heatmap(date_stats, 'dt', 'avg') + 
+    calPlot <- ggplot_calendar_heatmap(daily_stats, 'daily', paste0(input$paramY, '_mean')) + 
       xlab(NULL) + 
       ylab(NULL) + 
       # labs(title=input$paramY) +

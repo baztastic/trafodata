@@ -2,10 +2,12 @@
 # devtools::use_package("ggplot2")
 # devtools::use_package("ggthemes")
 # devtools::use_package("lubridate")
+# devtools::use_package("dplyr")
 require("RPostgreSQL")
 require("ggplot2")
 require("ggthemes")
 require("lubridate")
+require("dplyr")
 
 #' Multiple plot function
 #' 
@@ -167,6 +169,46 @@ get_data <- function(connection, feeder_id=1, start_time="'2017-06-16 11:00:00'"
 	}
 	print("Finished query!")
 	return(queryRtn)
+}
+
+#' Calculate daily statistics
+#' 
+#' Instead of a separate query, calculate the statistics inside R using dplyr and lubridate
+#' @param data.frame feeder_data object
+#' @return data.frame containing daily statistics data
+
+calc_daily_stats <- function(data_df) {
+	daily_stats <- data_df %>% 
+		mutate(DateTime = time_and_date) %>% 
+		group_by(daily = as.Date(as_date(time_and_date))) %>% 
+		summarise_all(funs(
+			max=max(., na.rm=TRUE),
+			mean=mean(., na.rm=TRUE),
+			min=min(., na.rm=TRUE),
+			sd=sd(., na.rm=TRUE)
+			)
+		)
+	return(daily_stats)
+}
+
+#' Calculate hourly statistics
+#' 
+#' Instead of a separate query, calculate the statistics inside R using dplyr and lubridate
+#' @param data.frame feeder_data object
+#' @return data.frame containing hourly statistics data
+
+calc_hourly_stats <- function(data_df) {
+	hourly_stats <- data_df %>% 
+		mutate(DateTime = time_and_date) %>% 
+		group_by(hour = floor_date(time_and_date, unit="hour")) %>% 
+		summarise_all(funs(
+			max=max(., na.rm=TRUE),
+			mean=mean(., na.rm=TRUE),
+			min=min(., na.rm=TRUE),
+			sd=sd(., na.rm=TRUE)
+			)
+		)
+	return(hourly_stats)
 }
 
 #' Statistics by date
