@@ -6,13 +6,15 @@ Electrical Analytics prototype user interface based on the R Shiny framework.
 
 * ``"shiny"``
 * ``"ggplot2"``
-* ``"RPostgreSQL"``
 * ``"lubridate"``
 * ``"ggthemes"``
 * ``"devtools"``
-* ``"ggTimeSeries"`` - Use ``devtools::install_github('Ather-Energy/ggTimeSeries')``
-* ``"gridExtra"``
+* ``"ggTimeSeries"``  - Use ``devtools::install_github('Ather-Energy/ggTimeSeries')``
 * ``"DT"``
+* ``"RPostgreSQL"``
+* ``"ggpmisc"``
+* ``"dplyr"``
+* ``"ggalt"``  - Use ``devtools::install_github('hrbrmstr/ggalt')``
 
 ### How do I get set up? ###
 
@@ -22,7 +24,7 @@ Electrical Analytics prototype user interface based on the R Shiny framework.
 
         R -f install_deps.R
     
-2. If that doesn't work, use ``install.packages([package_name])`` to manually install the packages listed above. See the note for ``ggTimeSeries``.
+2. If that doesn't work, use ``install.packages([package_name])`` to manually install the packages listed above. See the note for ``ggTimeSeries`` and ``ggalt``.
 
 3. On linux, ``libpq-dev`` is required for RPostgreSQL, so (for ubuntu-like distros) run:
 
