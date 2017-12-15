@@ -76,7 +76,7 @@ shinyServer(function(input, output, session) {
         error=function(cond) {
           tryCatch({
             print("Trying remote connection")
-            con <- start_sql('remote')
+            con <<- start_sql('remote')
             },
             error=function(cond2) {
               print("Couldn't connect to database")
