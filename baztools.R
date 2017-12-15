@@ -208,6 +208,7 @@ calc_hourly_stats <- function(data_df) {
 			sd=sd(., na.rm=TRUE)
 			)
 		)
+	hourly_stats$hour_fac <- as.factor(hour(hourly_stats$hour))
 	return(hourly_stats)
 }
 

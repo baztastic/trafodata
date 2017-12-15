@@ -98,7 +98,6 @@ shinyServer(function(input, output, session) {
         # feeder_data <<- feeder_data[which(feeder_data$current_thd < 64),]
 
         hourly_stats <<- calc_hourly_stats(feeder_data)
-        hourly_stats$hour_fac <<- as.factor(hour(hourly_stats$hour))
         daily_stats <<- calc_daily_stats(feeder_data)
         },
         error=function(cond){
@@ -152,7 +151,7 @@ shinyServer(function(input, output, session) {
       )
 
     # these are the date ranges that we have data for on each trafo
-    # in future should be populated by database query?
+    # TODO in future should be populated by database query?
     date_ranges <- data.frame(stringsAsFactors=FALSE,
       row.names=c("tf1", "tf6", "tf5"),
       "min" = c("2017-01-01", "2017-06-14", "2017-08-23"),
@@ -266,6 +265,144 @@ shinyServer(function(input, output, session) {
       # encircle <- TRUE
       # d_select <- feeder_data[feeder_data$current_thd > 40,]
       # if(encircle == TRUE) p <- p + geom_encircle(aes(x=input$paramX, y=input$paramY), data=d_select, color="red", size=2, expand=0)
+    incProgress(1/6)
+    # do some general setup on the plot (from baztools.R)
+      p <- setup_plot(p, id)
+    incProgress(1/6)
+    # labels and legends
+      p <- p + xlab(input$paramX)
+      p <- p + ylab(input$paramY)
+
+      # TODO add a nice title
+      # p <- p + ggtitle(paste(input$trafoNumber, input$feederNumber))
+      # p <- p + ggtitle(paste(
+      #   names(trafoSelectList[which(trafoSelectList == input$trafoNumber)]), 
+      #   "Feeder",
+      #   input$feederNumber
+      #   ))
+      # browser()
+      
+    incProgress(1/6)
+      p <- p + theme(legend.position = "bottom")
+      if(input$paramX != "time_and_date") p <- p + scale_x_continuous(trans=input$xScaleType)
+      if(input$paramY != "time_and_date") p <- p + scale_y_continuous(trans=input$yScaleType)
+      p <- p + scale_colour_continuous(low="blue", high="red",
+    guide = guide_colorbar(direction = "horizontal", 
+      title=input$paramCol, 
+      title.position="top", 
+      title.hjust=0.5,
+      barwidth = 30)
+    )
+    # print(p)  # show plot (doesn't work with hover tooltips)
+    # ggMarginal(p, type = "histogram", fill="transparent")
+
+    p
+      # incProgress(1/6)
+    })
+  })
+
+  # render the hourly plot
+  output$hourlyScatter <- renderPlot({
+    # everything to be refreshed needs to be connected to queryBtn
+      btnPress <- input$queryBtn
+      if(btnPress == 0) return(NULL)
+    withProgress(message="Rendering Plot", detail="Please Wait", {
+    # make data frame
+      # d <- subSampling()
+      xdata <- eval(parse(text = paste0("hourly_stats$", input$paramX, "_mean")))
+      ydata <- eval(parse(text = paste0("hourly_stats$", input$paramY, "_mean")))
+      coldata <- eval(parse(text = paste0("hourly_stats$", input$paramCol, "_mean")))
+      d <- data.frame(xdata, ydata, coldata)
+    incProgress(1/6)
+    # define plot area
+      p <- ggplot(d, aes(d$x, d$y))
+    incProgress(1/6)
+    # check options and add lines or points
+      # if(input$smoothOption) {
+      #   p <- p + geom_smooth(
+      #     method=input$smoothType, 
+      #     span=0.05, 
+      #     level=0.99, 
+      #     na.rm=TRUE)
+      # }
+      # if(input$plotType == "geom_point") p <- p + geom_point(aes(colour=d$coldata), alpha = input$alpha)
+      # if(input$plotType == "geom_line") p <- p + geom_line(aes(colour=d$coldata), alpha = input$alpha)
+      p <- p + geom_ribbon(aes(
+        ymax = eval(parse(text = paste0("hourly_stats$", input$paramY, "_max"))),
+        ymin = eval(parse(text = paste0("hourly_stats$", input$paramY, "_min")))
+        ), alpha=0.5, fill="skyblue")
+      p <- p + geom_point(aes(colour=d$coldata), alpha = input$alpha)
+      p <- p + geom_line(aes(colour=d$coldata), alpha = input$alpha)
+      
+    incProgress(1/6)
+    # do some general setup on the plot (from baztools.R)
+      p <- setup_plot(p, id)
+    incProgress(1/6)
+    # labels and legends
+      p <- p + xlab(input$paramX)
+      p <- p + ylab(input$paramY)
+
+      # TODO add a nice title
+      # p <- p + ggtitle(paste(input$trafoNumber, input$feederNumber))
+      # p <- p + ggtitle(paste(
+      #   names(trafoSelectList[which(trafoSelectList == input$trafoNumber)]), 
+      #   "Feeder",
+      #   input$feederNumber
+      #   ))
+      # browser()
+      
+    incProgress(1/6)
+      p <- p + theme(legend.position = "bottom")
+      if(input$paramX != "time_and_date") p <- p + scale_x_continuous(trans=input$xScaleType)
+      if(input$paramY != "time_and_date") p <- p + scale_y_continuous(trans=input$yScaleType)
+      p <- p + scale_colour_continuous(low="blue", high="red",
+    guide = guide_colorbar(direction = "horizontal", 
+      title=input$paramCol, 
+      title.position="top", 
+      title.hjust=0.5,
+      barwidth = 30)
+    )
+    # print(p)  # show plot (doesn't work with hover tooltips)
+    # ggMarginal(p, type = "histogram", fill="transparent")
+
+    p
+      # incProgress(1/6)
+    })
+  })
+
+  # render the daily plot
+  output$dailyScatter <- renderPlot({
+    # everything to be refreshed needs to be connected to queryBtn
+      btnPress <- input$queryBtn
+      if(btnPress == 0) return(NULL)
+    withProgress(message="Rendering Plot", detail="Please Wait", {
+    # make data frame
+      # d <- subSampling()
+      xdata <- eval(parse(text = paste0("daily_stats$", input$paramX, "_mean")))
+      ydata <- eval(parse(text = paste0("daily_stats$", input$paramY, "_mean")))
+      coldata <- eval(parse(text = paste0("daily_stats$", input$paramCol, "_mean")))
+      d <- data.frame(xdata, ydata, coldata)
+    incProgress(1/6)
+    # define plot area
+      p <- ggplot(d, aes(d$x, d$y))
+    incProgress(1/6)
+    # check options and add lines or points
+      # if(input$smoothOption) {
+      #   p <- p + geom_smooth(
+      #     method=input$smoothType, 
+      #     span=0.05, 
+      #     level=0.99, 
+      #     na.rm=TRUE)
+      # }
+      # if(input$plotType == "geom_point") p <- p + geom_point(aes(colour=d$coldata), alpha = input$alpha)
+      # if(input$plotType == "geom_line") p <- p + geom_line(aes(colour=d$coldata), alpha = input$alpha)
+      p <- p + geom_ribbon(aes(
+        ymax = eval(parse(text = paste0("daily_stats$", input$paramY, "_max"))),
+        ymin = eval(parse(text = paste0("daily_stats$", input$paramY, "_min")))
+        ), alpha=0.5, fill="skyblue")
+      p <- p + geom_point(aes(colour=d$coldata), alpha = input$alpha)
+      p <- p + geom_line(aes(colour=d$coldata), alpha = input$alpha)
+      
     incProgress(1/6)
     # do some general setup on the plot (from baztools.R)
       p <- setup_plot(p, id)

@@ -197,12 +197,26 @@ shinyUI(fluidPage(
 
     # main tabbed panel with plots and data representation
     mainPanel(
-      div(
-        style = "position:relative;",
-        plotOutput("plot", 
-                   hover = hoverOpts("plot_hover", delay = 0, delayType = "debounce")),
-        uiOutput("hover_info")
-      ),
+      tabsetPanel(
+        tabPanel("Hourly Resolution",
+            div(style = "position:relative;",
+              plotOutput("hourlyScatter")
+              )
+            ),
+        tabPanel("Full Resolution",
+            div(
+              style = "position:relative;",
+              plotOutput("plot", 
+                         hover = hoverOpts("plot_hover", delay = 0, delayType = "debounce")),
+              uiOutput("hover_info")
+              )
+            ),
+        tabPanel("Daily Resolution",
+            div(style = "position:relative;",
+              plotOutput("dailyScatter")
+              )
+            )
+          ),
       tabsetPanel(
         # tabPanel("Plot", plotOutput("plot", hover = hoverOpts("plot_hover", delay = 100, delayType = "debounce"))), 
         tabPanel("Stats", list(
