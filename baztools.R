@@ -123,13 +123,20 @@ get_feeders <- function(connection) {
 #' @param character End time for query. Make sure to include single quotes around string
 #' @return data.frame containing query data
 
-get_data <- function(connection, feeder_id=1, start_time="'2017-06-16 11:00:00'", end_time="'2017-06-24 13:00:00'", imbal=TRUE) {
+get_data <- function(connection, feeder_id=1, start_time="'2017-06-16 11:00:00'", end_time="'2017-06-24 13:00:00'") {
 	# if(feeders$phase_type[feeder_id] == 0){
 	# 	dbDisconnect(con)
 	# 	print("Neutral feeders are boring")
 	# 	return(NULL)
 	# }
 	feeders_info <- get_feeders(connection)
+	
+	trafo_id <- feeders_info$transformer[feeder_id]
+	trafo_feeders <- feeders_info[which(feeders_info$transformer == trafo_id),]
+	# throw out phase_type=0 since there are only 3 phases
+	phase_ids <- unique(trafo_feeders$phase[which(trafo_feeders$phase_type != 0)])
+	phase_ids <- sort(phase_ids)
+
 	queryStr <- paste("SELECT",
 					"feeder_stats.feeder_id AS feeder_id,", 
 					"feeder_stats.time_and_date AS time_and_date,", 
@@ -143,13 +150,25 @@ get_data <- function(connection, feeder_id=1, start_time="'2017-06-16 11:00:00'"
 					"phase_stats.voltage AS voltage,", 
 					"phase_stats.thd AS voltage_thd,",
 					"transformer_stats.temperature AS temperature,",
-					"transformer_stats.frequency AS frequency",
+					"transformer_stats.frequency AS frequency,",
+					"p1.phase_id AS id1,", 
+					"p1.voltage AS v1,", 
+					"p2.phase_id AS id2,", 
+					"p2.voltage AS v2,", 
+					"p3.phase_id AS id3,", 
+					"p3.voltage AS v3",
 					"FROM feeder_stats",
 					"JOIN phase_stats ON phase_stats.time_and_date = feeder_stats.time_and_date",
 					"JOIN transformer_stats ON transformer_stats.time_and_date = feeder_stats.time_and_date",
+					"JOIN phase_stats AS p1 ON p1.time_and_date = feeder_stats.time_and_date",
+					"JOIN phase_stats AS p2 ON p2.time_and_date = feeder_stats.time_and_date",
+					"JOIN phase_stats AS p3 ON p3.time_and_date = feeder_stats.time_and_date",
 					"WHERE feeder_stats.feeder_id =", feeders_info$id[feeder_id],
 					"AND phase_stats.phase_id =", feeders_info$phase[feeder_id],
 					"AND transformer_stats.transformer_id = ", feeders_info$transformer[feeder_id],
+					"AND p1.phase_id =", phase_ids[1],
+					"AND p2.phase_id =", phase_ids[2],
+					"AND p3.phase_id =", phase_ids[3],
 					"AND feeder_stats.time_and_date BETWEEN",
 					start_time,
 					"AND",
@@ -163,10 +182,17 @@ get_data <- function(connection, feeder_id=1, start_time="'2017-06-16 11:00:00'"
 	queryRtn['min_of_day'] <- as.integer(format(queryRtn$time_and_date, "%H"))*60 + as.integer(format(queryRtn$time_and_date, "%M"))
 	queryRtn['hour_of_day'] <- as.integer(format(queryRtn$time_and_date, "%H"))
 	queryRtn['day_of_week'] <- as.integer(format(queryRtn$time_and_date, "%u"))
-	if(imbal) {
-		imbalance <- get_voltage_imbalance(connection, feeder_id, start_time, end_time)
-		queryRtn <- merge(queryRtn, imbalance)  # join data frames on time_and_date
-	}
+
+	voltages <- list(queryRtn$v1, queryRtn$v2, queryRtn$v3)
+	V_mean <- unlist(lapply(data.table::transpose(voltages), mean))
+	V_delta <- list(abs(voltages[[1]]-V_mean), abs(voltages[[2]]-V_mean), abs(voltages[[3]]-V_mean))
+	V_max <- unlist(lapply(data.table::transpose(V_delta), max))
+	imbalance <- 100 * (V_max) / V_mean
+	problem_phase <- cbind(V_delta[[1]] == V_max, V_delta[[2]] == V_max, V_delta[[3]] == V_max)
+	problem_phase <- (problem_phase %*% phase_ids)
+	problem_phase[!(problem_phase %in% phase_ids)] <- NA # if more than one phase is a problem, discard that point	
+	queryRtn <- cbind(queryRtn, imbalance, problem_phase)
+
 	print("Finished query!")
 	return(queryRtn)
 }

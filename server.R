@@ -20,6 +20,8 @@ library(gridExtra)
 library(ggExtra)
 library(dplyr) # for grouping by hour and day etc
 
+library(tictoc) # for timing code
+
 # not used for now
 # library("bazRtools") # using local source for convenience instead
 # library("plotly") # way too slow
@@ -90,7 +92,9 @@ shinyServer(function(input, output, session) {
 
       tryCatch({
         # double arrows (<<-) for global variable assignment
-        feeder_data <<- get_data(con, as.integer(input$feederNumber), start_time, end_time, imbal=input$imbal)
+        tic("get_data")
+        feeder_data <<- get_data(con, as.integer(input$feederNumber), start_time, end_time)
+        toc()
         feeders <<- get_feeders(con)
 
         # do some selection of data to remove outliers
@@ -546,7 +550,6 @@ shinyServer(function(input, output, session) {
       addDist = TRUE
       )
     if (nrow(point) == 0) return(NULL)
-          
     # browser()
     # if (nrow(point) == 0) return(NULL)
 

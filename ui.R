@@ -11,7 +11,6 @@ require(DT)
 # not used for now
 # library(shinyjs) # take a look at usability tweaks
 
-# TODO if imbal==FALSE, remove imbalance, v1-3 options
 # list of possible parameters from DB and calculated in baztools.R
 paramList <- list(
   "Time" = "time_and_date",
@@ -108,12 +107,6 @@ shinyUI(fluidPage(
                    value = 75,
                    min = 1, 
                    max = 100),
-      radioButtons("imbal", "Voltage imbalance?",
-                    list("Yes" = TRUE,
-                      "No" = FALSE
-                      ),
-                    selected=TRUE
-                    ),
 
       radioButtons("smoothOption", "Add trend line?",
                     list("Yes" = TRUE,
