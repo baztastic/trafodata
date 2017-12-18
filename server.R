@@ -20,7 +20,7 @@ library(gridExtra)
 library(ggExtra)
 library(dplyr) # for grouping by hour and day etc
 
-require(tictoc, quietly=TRUE) # for timing code
+require(tictoc, quietly=TRUE) # for timing code (not essential)
 
 # not used for now
 # library("bazRtools") # using local source for convenience instead
@@ -73,7 +73,8 @@ shinyServer(function(input, output, session) {
         incProgress(detail="Connecting")
         tryCatch({
           # check if connection already exists
-          dbGetQuery(con, '')},
+          dbGetQuery(con, '')
+          print("Connection still alive")},
           # if not, start connection
           error = function(e) {
           tryCatch({
@@ -209,7 +210,8 @@ shinyServer(function(input, output, session) {
 
   # show feeder info
   output$summary_Feederinfo <- renderPrint({
-    if(input$queryBtn > 0 && length(feeder_data) != 0) {print("Feeder info:");feeders[feeders$id==as.integer(input$feederNumber),]}
+    # length(isolate(reactiveValuesToList(feeder_data)))
+    if(input$queryBtn > 0 && length(feeder_data) != 0) {print("Feeder info:"); feeders[feeders$id==as.integer(input$feederNumber),]}
     })
 
   # show the summary of the X data if there's anything to show
@@ -605,4 +607,7 @@ shinyServer(function(input, output, session) {
         )))
     )
   })
+  session$onSessionEnded(function() {
+    dbDisconnect(con)
+    })
 })
