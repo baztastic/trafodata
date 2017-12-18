@@ -20,7 +20,7 @@ library(gridExtra)
 library(ggExtra)
 library(dplyr) # for grouping by hour and day etc
 
-library(tictoc) # for timing code
+require(tictoc, quietly=TRUE) # for timing code
 
 # not used for now
 # library("bazRtools") # using local source for convenience instead
@@ -71,31 +71,43 @@ shinyServer(function(input, output, session) {
     # try to connect to the database
     withProgress(message="Please Wait", style="notification", {
         incProgress(detail="Connecting")
-      tryCatch({
-        print("Trying local connection")
-        con <- start_sql('local')
-        },
-        error=function(cond) {
+        tryCatch({
+          # check if connection already exists
+          dbGetQuery(con, '')},
+          # if not, start connection
+          error = function(e) {
           tryCatch({
-            print("Trying remote connection")
-            con <<- start_sql('remote')
+            print("Trying local connection")
+            con <<- start_sql('local')
             },
-            error=function(cond2) {
-              print("Couldn't connect to database")
-              showNotification("Couldn't connect to database", type='error')
-              return()
-            })
-          }
-        )
+            error=function(cond) {
+              tryCatch({
+                print("Trying remote connection")
+                con <<- start_sql('remote')
+                },
+                error=function(cond2) {
+                  print("Couldn't connect to database")
+                  showNotification("Couldn't connect to database", type='error')
+                  return()
+                })
+              })
+            }
+          )
       # try to make the query
         incProgress(detail="Getting data")
 
       tryCatch({
         # double arrows (<<-) for global variable assignment
-        tic("get_data")
-        feeder_data <<- get_data(con, as.integer(input$feederNumber), start_time, end_time)
-        toc()
+        if("tictoc" %in% (.packages())) {
+                tic("get_data")
+              }
         feeders <<- get_feeders(con)
+
+        feeder_data <<- get_data(con, feeders, as.integer(input$feederNumber), start_time, end_time)
+        if("tictoc" %in% (.packages())) {
+                toc()
+              }
+        print(ymd_hms(end_time) - ymd_hms(start_time))
 
         # do some selection of data to remove outliers
         feeder_data <<- feeder_data[which(feeder_data$temperature < 1000),]
@@ -107,8 +119,8 @@ shinyServer(function(input, output, session) {
         error=function(cond){
           return()
           })
-        incProgress(detail="Closing connection")
-      try(print(paste("Connection closed?", dbDisconnect(con))))
+        # incProgress(detail="Closing connection")
+      # try(print(paste("Connection closed?", dbDisconnect(con))))
         incProgress(detail="Done!")
     })
   })
@@ -300,6 +312,7 @@ shinyServer(function(input, output, session) {
     # print(p)  # show plot (doesn't work with hover tooltips)
     # ggMarginal(p, type = "histogram", fill="transparent")
 
+    
     p
       # incProgress(1/6)
     })
@@ -368,7 +381,7 @@ shinyServer(function(input, output, session) {
     )
     # print(p)  # show plot (doesn't work with hover tooltips)
     # ggMarginal(p, type = "histogram", fill="transparent")
-
+    
     p
       # incProgress(1/6)
     })
@@ -401,8 +414,8 @@ shinyServer(function(input, output, session) {
       # if(input$plotType == "geom_point") p <- p + geom_point(aes(colour=d$coldata), alpha = input$alpha)
       # if(input$plotType == "geom_line") p <- p + geom_line(aes(colour=d$coldata), alpha = input$alpha)
       p <- p + geom_ribbon(aes(
-        ymax = eval(parse(text = paste0("daily_stats$", input$paramY, "_max"))),
-        ymin = eval(parse(text = paste0("daily_stats$", input$paramY, "_min")))
+        ymax = eval(parse(text = paste0("daily_stats$", input$paramY, "_mean + daily_stats$", input$paramY, "_sd"))),
+        ymin = eval(parse(text = paste0("daily_stats$", input$paramY, "_mean - daily_stats$", input$paramY, "_sd")))
         ), alpha=0.5, fill="skyblue")
       p <- p + geom_point(aes(colour=d$coldata), alpha = input$alpha)
       p <- p + geom_line(aes(colour=d$coldata), alpha = input$alpha)
@@ -438,6 +451,7 @@ shinyServer(function(input, output, session) {
     # print(p)  # show plot (doesn't work with hover tooltips)
     # ggMarginal(p, type = "histogram", fill="transparent")
 
+    
     p
       # incProgress(1/6)
     })

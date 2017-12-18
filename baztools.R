@@ -118,18 +118,19 @@ get_feeders <- function(connection) {
 #' 
 #' Get data from database on specific feeder. Joins feeder_stats, phase_stats, and transformer_stats on date_and_time
 #' @param connection SQL connection object
+#' @param data_frame List of feeders from get_feeders()
 #' @param int Feeder id
 #' @param character Start time for query. Make sure to include single quotes around string
 #' @param character End time for query. Make sure to include single quotes around string
 #' @return data.frame containing query data
 
-get_data <- function(connection, feeder_id=1, start_time="'2017-06-16 11:00:00'", end_time="'2017-06-24 13:00:00'") {
+get_data <- function(connection, feeders_info, feeder_id=1, start_time="'2017-06-16 11:00:00'", end_time="'2017-06-24 13:00:00'") {
 	# if(feeders$phase_type[feeder_id] == 0){
 	# 	dbDisconnect(con)
 	# 	print("Neutral feeders are boring")
 	# 	return(NULL)
 	# }
-	feeders_info <- get_feeders(connection)
+	# feeders_info <- get_feeders(connection)
 	
 	trafo_id <- feeders_info$transformer[feeder_id]
 	trafo_feeders <- feeders_info[which(feeders_info$transformer == trafo_id),]
