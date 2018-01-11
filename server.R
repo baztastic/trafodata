@@ -47,11 +47,13 @@ trafoSelectList<-list(
   )
 
 shinyServer(function(input, output, session) {
-  # declare data variables
-  feeder_data <- reactiveValues()
-  hourly_stats <- reactiveValues()
-  daily_stats <- reactiveValues()
-  feeders <- reactiveValues()
+  # declare data variables - actually reactive values now!
+  d <- reactiveValues(
+    feeder_data=data.frame(), 
+    hourly_stats=data.frame(), 
+    daily_stats=data.frame(), 
+    feeders=data.frame()
+    )
 
   # wait for query button to be pressed
   observeEvent(input$queryBtn, {
@@ -98,24 +100,29 @@ shinyServer(function(input, output, session) {
         incProgress(detail="Getting data")
 
       tryCatch({
-        # double arrows (<<-) for global variable assignment
+        # double arrows (<<-) for global variable assignment no longer needed
         if("tictoc" %in% (.packages())) {
                 tic("get_data")
               }
-        feeders <<- get_feeders(con)
+        d$feeders <- get_feeders(con)
 
-        feeder_data <<- get_data(con, feeders, as.integer(input$feederNumber), start_time, end_time)
+        d$feeder_data <- get_data(con, feeders, as.integer(input$feederNumber), start_time, end_time)
         if("tictoc" %in% (.packages())) {
-                toc()
-              }
-        print(ymd_hms(end_time) - ymd_hms(start_time))
+                timer <- toc()
+                days_int <- round(interval(ymd_hms(start_time), ymd_hms(end_time)) / days(1))
+                secsPerDay <- (timer$toc - timer$tic) / days_int
+                print(paste(
+                  round(secsPerDay, 3),
+                  "seconds per day of data"
+                  ))
+        }
 
         # do some selection of data to remove outliers
-        feeder_data <<- feeder_data[which(feeder_data$temperature < 1000),]
-        # feeder_data <<- feeder_data[which(feeder_data$current_thd < 64),]
+        d$feeder_data <- d$feeder_data[which(d$feeder_data$temperature < 1000),]
+        # d$feeder_data <- d$feeder_data[which(d$feeder_data$current_thd < 64),]
 
-        hourly_stats <<- calc_hourly_stats(feeder_data)
-        daily_stats <<- calc_daily_stats(feeder_data)
+        d$hourly_stats <- calc_hourly_stats(d$feeder_data)
+        d$daily_stats <- calc_daily_stats(d$feeder_data)
         },
         error=function(cond){
           return()
@@ -136,18 +143,18 @@ shinyServer(function(input, output, session) {
       if(input$paramY != "time_and_date") y <- normalise(ydata())
       else y <- ydata()
       # y <- normalise(ydata())
-      d <- data.frame(x, y, coldata())
+      df <- data.frame(x, y, coldata())
     }
     else {
-      d <- data.frame(xdata(), ydata(), coldata())
+      df <- data.frame(xdata(), ydata(), coldata())
     }
-    # d <- data.frame(xdata(), ydata(), coldata())
+    # df <- data.frame(xdata(), ydata(), coldata())
     if(input$paramCol == "time_and_date"){
       # to have a continuous colour range, convert dt to integer
-      d$coldata.. <- as.integer(d$coldata..)
+      df$coldata.. <- as.integer(df$coldata..)
     }
     # take a random subsample of the data
-    d <- d[sample(nrow(d),nrow(d)*subsample),]
+    df <- df[sample(nrow(df),nrow(df)*subsample),]
     })
 
   # populate feeder and date selectors based on the trafoNumber
@@ -193,40 +200,40 @@ shinyServer(function(input, output, session) {
   xdata <- reactive({
     # everything to be refreshed needs to be connected to queryBtn
     btnPress <- input$queryBtn
-    eval(parse(text = paste0("feeder_data$", input$paramX)))
+    eval(parse(text = paste0("d$feeder_data$", input$paramX)))
     })
 
   # take the y parameter chosen and form a valid R variable name
   ydata <- reactive({
     btnPress <- input$queryBtn
-    eval(parse(text = paste0("feeder_data$", input$paramY)))
+    eval(parse(text = paste0("d$feeder_data$", input$paramY)))
     })
 
   # take the colour parameter chosen and form a valid R variable name
   coldata <- reactive({
     btnPress <- input$queryBtn
-    eval(parse(text = paste0("feeder_data$", input$paramCol)))
+    eval(parse(text = paste0("d$feeder_data$", input$paramCol)))
     })
 
   # show feeder info
   output$summary_Feederinfo <- renderPrint({
-    # length(isolate(reactiveValuesToList(feeder_data)))
-    if(input$queryBtn > 0 && length(feeder_data) != 0) {print("Feeder info:"); feeders[feeders$id==as.integer(input$feederNumber),]}
+    # length(isolate(reactiveValuesToList(d$feeder_data)))
+    if(input$queryBtn > 0 && length(d$feeder_data) != 0) {print("Feeder info:"); d$feeders[d$feeders$id==as.integer(input$feederNumber),]}
     })
 
   # show the summary of the X data if there's anything to show
   output$summary_Xinfo <- renderPrint({
-    if(input$queryBtn > 0 && length(feeder_data) != 0) {print(input$paramX); summary(xdata())}
+    if(input$queryBtn > 0 && length(d$feeder_data) != 0) {print(input$paramX); summary(xdata())}
     })
 
   # show the summary of the Y data if there's anything to show
   output$summary_Yinfo <- renderPrint({
-    if(input$queryBtn > 0 && length(feeder_data) != 0) {print(input$paramY); summary(ydata())}
+    if(input$queryBtn > 0 && length(d$feeder_data) != 0) {print(input$paramY); summary(ydata())}
     })
 
   # show the summary of the colour data if there's anything to show
   output$summary_Colinfo <- renderPrint({
-    if(input$queryBtn > 0 && length(feeder_data) != 0) {print(input$paramCol); summary(coldata())}
+    if(input$queryBtn > 0 && length(d$feeder_data) != 0) {print(input$paramCol); summary(coldata())}
     })
 
   # render the plot
@@ -236,10 +243,10 @@ shinyServer(function(input, output, session) {
       if(btnPress == 0) return(NULL)
     withProgress(message="Rendering Plot", detail="Please Wait", {
     # make data frame
-      d <- subSampling()
+      df <- subSampling()
     incProgress(1/6)
     # define plot area
-      p <- ggplot(d, aes(d$x, d$y))
+      p <- ggplot(df, aes(df$x, df$y))
     incProgress(1/6)
     # check options and add lines or points
       if(input$smoothOption) {
@@ -249,8 +256,8 @@ shinyServer(function(input, output, session) {
           level=0.99999, 
           na.rm=TRUE)
       }
-      if(input$plotType == "geom_point") p <- p + geom_point(aes(colour=d$coldata), alpha = input$alpha)
-      if(input$plotType == "geom_line") p <- p + geom_line(aes(colour=d$coldata), alpha = input$alpha)
+      if(input$plotType == "geom_point") p <- p + geom_point(aes(colour=df$coldata), alpha = input$alpha)
+      if(input$plotType == "geom_line") p <- p + geom_line(aes(colour=df$coldata), alpha = input$alpha)
       
       # TODO check whether arbitrary fitting is useful (or possible!)
       # if(input$arbFitting != "") {
@@ -281,7 +288,7 @@ shinyServer(function(input, output, session) {
 
       # TODO implement grouping
       # encircle <- TRUE
-      # d_select <- feeder_data[feeder_data$current_thd > 40,]
+      # d_select <- d$feeder_data[d$feeder_data$current_thd > 40,]
       # if(encircle == TRUE) p <- p + geom_encircle(aes(x=input$paramX, y=input$paramY), data=d_select, color="red", size=2, expand=0)
     incProgress(1/6)
     # do some general setup on the plot (from baztools.R)
@@ -327,14 +334,14 @@ shinyServer(function(input, output, session) {
       if(btnPress == 0) return(NULL)
     withProgress(message="Rendering Plot", detail="Please Wait", {
     # make data frame
-      # d <- subSampling()
-      xdata <- eval(parse(text = paste0("hourly_stats$", input$paramX, "_mean")))
-      ydata <- eval(parse(text = paste0("hourly_stats$", input$paramY, "_mean")))
-      coldata <- eval(parse(text = paste0("hourly_stats$", input$paramCol, "_mean")))
-      d <- data.frame(xdata, ydata, coldata)
+      # df <- subSampling()
+      xdata <- eval(parse(text = paste0("d$hourly_stats$", input$paramX, "_mean")))
+      ydata <- eval(parse(text = paste0("d$hourly_stats$", input$paramY, "_mean")))
+      coldata <- eval(parse(text = paste0("d$hourly_stats$", input$paramCol, "_mean")))
+      df <- data.frame(xdata, ydata, coldata)
     incProgress(1/6)
     # define plot area
-      p <- ggplot(d, aes(d$x, d$y))
+      p <- ggplot(df, aes(df$x, df$y))
     incProgress(1/6)
     # check options and add lines or points
       # if(input$smoothOption) {
@@ -344,14 +351,14 @@ shinyServer(function(input, output, session) {
       #     level=0.99, 
       #     na.rm=TRUE)
       # }
-      # if(input$plotType == "geom_point") p <- p + geom_point(aes(colour=d$coldata), alpha = input$alpha)
-      # if(input$plotType == "geom_line") p <- p + geom_line(aes(colour=d$coldata), alpha = input$alpha)
+      # if(input$plotType == "geom_point") p <- p + geom_point(aes(colour=df$coldata), alpha = input$alpha)
+      # if(input$plotType == "geom_line") p <- p + geom_line(aes(colour=df$coldata), alpha = input$alpha)
       p <- p + geom_ribbon(aes(
-        ymax = eval(parse(text = paste0("hourly_stats$", input$paramY, "_max"))),
-        ymin = eval(parse(text = paste0("hourly_stats$", input$paramY, "_min")))
+        ymax = eval(parse(text = paste0("d$hourly_stats$", input$paramY, "_max"))),
+        ymin = eval(parse(text = paste0("d$hourly_stats$", input$paramY, "_min")))
         ), alpha=0.5, fill="skyblue")
-      p <- p + geom_point(aes(colour=d$coldata), alpha = input$alpha)
-      p <- p + geom_line(aes(colour=d$coldata), alpha = input$alpha)
+      p <- p + geom_point(aes(colour=df$coldata), alpha = input$alpha)
+      p <- p + geom_line(aes(colour=df$coldata), alpha = input$alpha)
       
     incProgress(1/6)
     # do some general setup on the plot (from baztools.R)
@@ -396,14 +403,14 @@ shinyServer(function(input, output, session) {
       if(btnPress == 0) return(NULL)
     withProgress(message="Rendering Plot", detail="Please Wait", {
     # make data frame
-      # d <- subSampling()
-      xdata <- eval(parse(text = paste0("daily_stats$", input$paramX, "_mean")))
-      ydata <- eval(parse(text = paste0("daily_stats$", input$paramY, "_mean")))
-      coldata <- eval(parse(text = paste0("daily_stats$", input$paramCol, "_mean")))
-      d <- data.frame(xdata, ydata, coldata)
+      # df <- subSampling()
+      xdata <- eval(parse(text = paste0("d$daily_stats$", input$paramX, "_mean")))
+      ydata <- eval(parse(text = paste0("d$daily_stats$", input$paramY, "_mean")))
+      coldata <- eval(parse(text = paste0("d$daily_stats$", input$paramCol, "_mean")))
+      df <- data.frame(xdata, ydata, coldata)
     incProgress(1/6)
     # define plot area
-      p <- ggplot(d, aes(d$x, d$y))
+      p <- ggplot(df, aes(df$x, df$y))
     incProgress(1/6)
     # check options and add lines or points
       # if(input$smoothOption) {
@@ -413,14 +420,14 @@ shinyServer(function(input, output, session) {
       #     level=0.99, 
       #     na.rm=TRUE)
       # }
-      # if(input$plotType == "geom_point") p <- p + geom_point(aes(colour=d$coldata), alpha = input$alpha)
-      # if(input$plotType == "geom_line") p <- p + geom_line(aes(colour=d$coldata), alpha = input$alpha)
+      # if(input$plotType == "geom_point") p <- p + geom_point(aes(colour=df$coldata), alpha = input$alpha)
+      # if(input$plotType == "geom_line") p <- p + geom_line(aes(colour=df$coldata), alpha = input$alpha)
       p <- p + geom_ribbon(aes(
-        ymax = eval(parse(text = paste0("daily_stats$", input$paramY, "_mean + daily_stats$", input$paramY, "_sd"))),
-        ymin = eval(parse(text = paste0("daily_stats$", input$paramY, "_mean - daily_stats$", input$paramY, "_sd")))
+        ymax = eval(parse(text = paste0("d$daily_stats$", input$paramY, "_mean + d$daily_stats$", input$paramY, "_sd"))),
+        ymin = eval(parse(text = paste0("d$daily_stats$", input$paramY, "_mean - d$daily_stats$", input$paramY, "_sd")))
         ), alpha=0.5, fill="skyblue")
-      p <- p + geom_point(aes(colour=d$coldata), alpha = input$alpha)
-      p <- p + geom_line(aes(colour=d$coldata), alpha = input$alpha)
+      p <- p + geom_point(aes(colour=df$coldata), alpha = input$alpha)
+      p <- p + geom_line(aes(colour=df$coldata), alpha = input$alpha)
       
     incProgress(1/6)
     # do some general setup on the plot (from baztools.R)
@@ -462,7 +469,7 @@ shinyServer(function(input, output, session) {
   # Generate an HTML table view of the data
   output$dataTable <- renderDataTable({
     btnPress <- input$queryBtn
-    DT::datatable(feeder_data, extensions=c('Buttons','Scroller'),
+    DT::datatable(d$feeder_data, extensions=c('Buttons','Scroller'),
       rownames=FALSE,
       escape=FALSE,
       options=list(dom='Bfrtip',
@@ -471,15 +478,15 @@ shinyServer(function(input, output, session) {
             extend = 'collection',
             buttons = list(
               list(extend='csv',
-                filename = 'feeder_data'),
+                filename = 'd$feeder_data'),
               list(extend='excel',
-                filename = 'feeder_data'),
+                filename = 'd$feeder_data'),
               list(extend='pdf',
-                filename= 'feeder_data')),
+                filename= 'd$feeder_data')),
                    text = 'Download'
                  )),
           scrollX=TRUE,
-          pageLength=nrow(feeder_data),
+          pageLength=nrow(d$feeder_data),
           deferRender=TRUE,
           scrollY=400,
           scroller=TRUE
@@ -490,7 +497,7 @@ shinyServer(function(input, output, session) {
   # Generate an HTML table view of the feeder list
   output$feederTable <- renderDataTable({
     btnPress <- input$queryBtn
-    DT::datatable(feeders, extensions=c('Buttons','Scroller'),
+    DT::datatable(d$feeders, extensions=c('Buttons','Scroller'),
       rownames=FALSE,
       escape=FALSE,
       options=list(dom='Bfrtip',
@@ -499,15 +506,15 @@ shinyServer(function(input, output, session) {
             extend = 'collection',
             buttons = list(
               list(extend='csv',
-                filename = 'feeders'),
+                filename = 'd$feeders'),
               list(extend='excel',
-                filename = 'feeders'),
+                filename = 'd$feeders'),
               list(extend='pdf',
-                filename= 'feeders')),
+                filename= 'd$feeders')),
                    text = 'Download'
                  )),
           scrollX=TRUE,
-          pageLength=nrow(feeders),
+          pageLength=nrow(d$feeders),
           deferRender=TRUE,
           scrollY=400,
           scroller=TRUE
@@ -517,15 +524,15 @@ shinyServer(function(input, output, session) {
 
   output$hourlyplot <- renderPlot({
     if(input$queryBtn == 0) return(NULL)
-    hourly_fill <- eval(parse(text = paste0("hourly_stats$", input$paramY, "_mean")))
-    # hourly_fill <- hourly_stats$avgreal
-    # hourly_fill <- hourly_stats$avg
+    hourly_fill <- eval(parse(text = paste0("d$hourly_stats$", input$paramY, "_mean")))
+    # hourly_fill <- d$hourly_stats$avgreal
+    # hourly_fill <- d$hourly_stats$avg
 
-    plot1 <- ggplot(hourly_stats, 
-      aes(as_date(hourly_stats$hour), hourly_stats$hour_fac)
+    plot1 <- ggplot(d$hourly_stats, 
+      aes(as_date(d$hourly_stats$hour), d$hourly_stats$hour_fac)
       ) + 
       geom_tile(aes(fill=hourly_fill)) + 
-      ylim(rev(levels(hourly_stats$hour_fac))) + 
+      ylim(rev(levels(d$hourly_stats$hour_fac))) + 
       scale_fill_continuous(low=colors[3,1], high=colors[1,2]) + 
       scale_x_date(date_breaks = "day", date_labels = "%a %d %b") +
     #   scale_x_date(date_breaks = "month", date_labels = "%B") +
@@ -545,7 +552,7 @@ shinyServer(function(input, output, session) {
   output$calendarplot <- renderPlot({
     if(input$queryBtn == 0) return(NULL)
     # options for data to plot are min, max, avg, std
-    calPlot <- ggplot_calendar_heatmap(daily_stats, 'daily', paste0(input$paramY, '_mean')) + 
+    calPlot <- ggplot_calendar_heatmap(d$daily_stats, 'daily', paste0(input$paramY, '_mean')) + 
       xlab(NULL) + 
       ylab(NULL) + 
       # labs(title=input$paramY) +
@@ -555,9 +562,9 @@ shinyServer(function(input, output, session) {
   })
 
   output$hover_info <- renderUI({
-    if(input$queryBtn == 0 || nrow(feeder_data)==0) return(NULL)
+    if(input$queryBtn == 0 || nrow(d$feeder_data)==0) return(NULL)
     hover <- input$plot_hover
-    point <- nearPoints(feeder_data, 
+    point <- nearPoints(d$feeder_data, 
       hover, 
       xvar=input$paramX, 
       yvar=input$paramY, 

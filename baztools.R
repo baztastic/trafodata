@@ -177,6 +177,7 @@ get_data <- function(connection, feeders_info, feeder_id=1, start_time="'2017-06
 					"ORDER BY feeder_stats.time_and_date ASC",
 					# "LIMIT 10",
 					";", sep=" ")
+	# print(queryStr)
 	print(paste("Starting query for feeder ", feeder_id, sep=''))
 	queryRtn <- dbGetQuery(connection, queryStr)
 	if(feeders_info$phase_type[feeder_id]!=0) queryRtn <- calc_power(queryRtn)
