@@ -6,6 +6,7 @@
 library(shiny)
 library(RPostgreSQL)
 library(lubridate)
+library(shinyWidgets)
 require(DT)
 
 # not used for now
@@ -54,7 +55,8 @@ trafoSelectList<-list(
 # build a shiny UI
 shinyUI(fluidPage(
   tags$head(
-    tags$link(rel = "stylesheet", type = "text/css", href = "bootstrap-spacelab.min.css"),
+    # tags$link(rel = "stylesheet", type = "text/css", href = "bootstrap-spacelab.min.css"),
+    tags$link(rel = "stylesheet", type = "text/css", href = "bootstrap-solar.min.css"),
     tags$link(rel = "stylesheet", type = "text/css", href = "overrides.css"),
     tags$style(HTML(".col-sm-4 {
       height: 90vh; overflow-y: auto;
@@ -80,6 +82,11 @@ shinyUI(fluidPage(
         # min="2017-08-23",
         # max=today()
         ),
+      sliderInput("dateRangeSlider", 
+      label = NULL, 
+      min = as.Date("2018-02-01"), max = Sys.Date(), 
+      value = c(as.Date("2018-02-25"), Sys.Date())
+      ),
       actionButton("queryBtn", "Start Query"),
       br(),
       br(),
@@ -94,28 +101,33 @@ shinyUI(fluidPage(
       selectInput("paramCol", "Colour Parameter:",
                    paramList,
                    selected = paramList[10]),
+      
+      switchInput("advanced", offLabel="Simple", onLabel="Advanced"),
 
-      sliderInput("alpha", 
-                  "Alpha:", 
-                   value = 0.5,
-                   min = 0, 
-                   max = 1,
-                   step = 0.01),
+      conditionalPanel
+        (
+        condition = "input.advanced == true",
+        sliderInput("alpha", 
+                    "Alpha:", 
+                     value = 0.5,
+                     min = 0, 
+                     max = 1,
+                     step = 0.01),
 
-      sliderInput("n", 
-                  "Subsampling percentage:", 
-                   value = 75,
-                   min = 1, 
-                   max = 100),
+        sliderInput("n", 
+                    "Subsampling percentage:", 
+                     value = 100,
+                     min = 1, 
+                     max = 100),
 
-      radioButtons("smoothOption", "Add trend line?",
-                    list("Yes" = TRUE,
-                      "No" = FALSE
+        radioButtons("smoothOption", "Add trend line?",
+                      list("Yes" = TRUE,
+                        "No" = FALSE
+                        ),
+                      selected=TRUE
                       ),
-                    selected=TRUE
-                    ),
-      conditionalPanel(
-        condition = "input.smoothOption == 'TRUE'",  # note this is javascript notation
+        conditionalPanel(
+          condition = "input.smoothOption == 'TRUE'",  # note this is javascript notation
           selectInput("smoothType", "Fitting type",
             list("Linear" = "lm",
               # "glm",
@@ -125,66 +137,68 @@ shinyUI(fluidPage(
               ),
             selected="loess"
             )        
-        ),
-      # too complicated - need to guess starting values
-      # textInput("arbFitting",
-      #   label="Arbitrary Fitting Function:",
-      #   value="y ~ a * I(log(x + b)) + c",
-      #   width="100%",
-      #   placeholder="e.g. y ~ x"
-      #   ),
+          ),
+        # too complicated - need to guess starting values
+        # textInput("arbFitting",
+        #   label="Arbitrary Fitting Function:",
+        #   value="y ~ a * I(log(x + b)) + c",
+        #   width="100%",
+        #   placeholder="e.g. y ~ x"
+        #   ),
 
-      radioButtons("normOption", "Normalise?",
-                    list("Yes" = TRUE,
-                      "No" = FALSE
-                      ),
-                      selected = FALSE),
+        radioButtons("normOption", "Normalise?",
+                      list("Yes" = TRUE,
+                        "No" = FALSE
+                        ),
+                        selected = FALSE),
 
-      radioButtons("plotType", "Plot type:",
-                    list("Points" = "geom_point",
-                      "Line" = "geom_line"
-                      ),
-                    selected = "geom_point"),
+        radioButtons("plotType", "Plot type:",
+                      list("Points" = "geom_point",
+                        "Line" = "geom_line"
+                        ),
+                      selected = "geom_point"),
 
-      selectInput("yScaleType", "Y-scale transformation:",
-                    list("No scaling" = "identity",
-                      "Log base 10" = "log10",
-                      "Natural Log" = "log",
-                      "Reciprocal" = "reciprocal",
-                      "Exponential" = "exp",
-                      "Reverse" = "reverse",
-                      "Square root" = "sqrt",
-                      "Arc-sin square root" = "asn",
-                      "Arc-tan" = "atanh",
-                      # "Box-cox" = "boxcox",
-                      "Log + 1" = "log1p",
-                      "Log base 2" = "log2"
-                      # "Inverse sigmoidal" = "logit"
-                      # "Probability" = "probability",
-                      # "Probit" = "probit",
+        selectInput("yScaleType", "Y-scale transformation:",
+                      list("No scaling" = "identity",
+                        "Log base 10" = "log10",
+                        "Natural Log" = "log",
+                        "Reciprocal" = "reciprocal",
+                        "Exponential" = "exp",
+                        "Reverse" = "reverse",
+                        "Square root" = "sqrt",
+                        "Arc-sin square root" = "asn",
+                        "Arc-tan" = "atanh",
+                        # "Box-cox" = "boxcox",
+                        "Log + 1" = "log1p",
+                        "Log base 2" = "log2"
+                        # "Inverse sigmoidal" = "logit"
+                        # "Probability" = "probability",
+                        # "Probit" = "probit",
+                        ),
+                      selected="identity"
                       ),
-                    selected="identity"
-                    ),
 
-      selectInput("xScaleType", "X-scale transformation:",
-                    list("No scaling" = "identity",
-                      "Log base 10" = "log10",
-                      "Natural Log" = "log",
-                      "Reciprocal" = "reciprocal",
-                      "Exponential" = "exp",
-                      "Reverse" = "reverse",
-                      "Square root" = "sqrt",
-                      "Arc-sin square root" = "asn",
-                      "Arc-tan" = "atanh",
-                      # "Box-cox" = "boxcox",
-                      "Log + 1" = "log1p",
-                      "Log base 2" = "log2"
-                      # "Inverse sigmoidal" = "logit"
-                      # "Probability" = "probability",
-                      # "Probit" = "probit",
+        selectInput("xScaleType", "X-scale transformation:",
+                      list("No scaling" = "identity",
+                        "Log base 10" = "log10",
+                        "Natural Log" = "log",
+                        "Reciprocal" = "reciprocal",
+                        "Exponential" = "exp",
+                        "Reverse" = "reverse",
+                        "Square root" = "sqrt",
+                        "Arc-sin square root" = "asn",
+                        "Arc-tan" = "atanh",
+                        # "Box-cox" = "boxcox",
+                        "Log + 1" = "log1p",
+                        "Log base 2" = "log2"
+                        # "Inverse sigmoidal" = "logit"
+                        # "Probability" = "probability",
+                        # "Probit" = "probit",
+                        ),
+                      selected="identity"
                       ),
-                    selected="identity"
-                    ),
+        br()
+      ),
       br()
     ),
 

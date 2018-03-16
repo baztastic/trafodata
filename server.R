@@ -55,6 +55,16 @@ shinyServer(function(input, output, session) {
     feeders=data.frame()
     )
 
+  observeEvent({
+    input$dateRangeSlider
+    }, ignoreInit=TRUE, {
+    updateDateRangeInput(session, "dateRange",
+      start=ymd(input$dateRangeSlider[1]),
+      end=ymd(input$dateRangeSlider[2])
+      )
+    }
+  )
+
   # wait for query button to be pressed
   observeEvent(input$queryBtn, {
     # browser()
@@ -65,6 +75,11 @@ shinyServer(function(input, output, session) {
     # dates from selector
     start_date <- ymd(input$dateRange[1])
     end_date <- ymd(input$dateRange[2]+1)
+
+    updateSliderInput(session, "dateRangeSlider",
+      value=c(as.Date(input$dateRange[1]),
+      as.Date(input$dateRange[2]))
+      )
 
     # format the dates for SQL
     start_time <- paste0("'", start_date-1, " 23:00:00", "'")
@@ -186,6 +201,13 @@ shinyServer(function(input, output, session) {
     updateSelectInput(session, "feederNumber",
       choices=feederSelectList[selected_trafo,],
       selected = feederSelectList[[selected_trafo,1]],
+      )
+
+    updateSliderInput(session, "dateRangeSlider",
+      min=as.Date(date_ranges[selected_trafo, "min"]),
+      max=as.Date(date_ranges[selected_trafo, "max"]),
+      value=c(as.Date(ymd(date_ranges[selected_trafo, "max"])-4),
+      as.Date(date_ranges[selected_trafo, "max"]))
       )
 
     updateDateRangeInput(session, "dateRange",

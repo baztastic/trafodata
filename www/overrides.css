@@ -1,3 +1,6 @@
+
+/*Light theme (bootstrap-spacelab.min.css)*/
+/*
 .datepicker table tr td.disabled, .datepicker table tr td.disabled:hover {
     background: 0 0;
     color: #cacaca;
@@ -9,3 +12,17 @@
 	color: #cacaca;
 	cursor: default;
 }
+*/
+
+/*Dark theme (bootstrap-solar.min.css)*/
+.well, .shiny-text-output {
+	background-color: #002b36;
+	color: #839496;
+}
+
+.irs-slider {
+    top: 40%;
+    width: 2px;
+    height: 10px;
+}
+
