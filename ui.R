@@ -87,7 +87,13 @@ shinyUI(fluidPage(
       min = as.Date("2018-02-01"), max = Sys.Date(), 
       value = c(as.Date("2018-02-25"), Sys.Date())
       ),
+      actionButton("backWeek", "⬅️"),
+      actionButton("addDayStart", "+"),
+      actionButton("subDayStart", "–"),
       actionButton("queryBtn", "Start Query"),
+      actionButton("subDayEnd", "–"),
+      actionButton("addDayEnd", "+"),
+      actionButton("fwdWeek", "➡️"),
       br(),
       br(),
       selectInput("paramX", "X Parameter:",

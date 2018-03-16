@@ -65,6 +65,37 @@ shinyServer(function(input, output, session) {
     }
   )
 
+  observeEvent(input$backWeek,
+    {updateSliderInput(session, "dateRangeSlider",
+      value=c(as.Date(input$dateRangeSlider[1])-7,
+      as.Date(input$dateRangeSlider[2])-7)
+      )})
+  observeEvent(input$fwdWeek,
+    {updateSliderInput(session, "dateRangeSlider",
+      value=c(as.Date(input$dateRangeSlider[1])+7,
+      as.Date(input$dateRangeSlider[2])+7)
+      )})
+  observeEvent(input$subDayStart,
+    {updateSliderInput(session, "dateRangeSlider",
+      value=c(as.Date(input$dateRangeSlider[1])+1,
+      as.Date(input$dateRangeSlider[2]))
+      )})
+  observeEvent(input$addDayStart,
+    {updateSliderInput(session, "dateRangeSlider",
+      value=c(as.Date(input$dateRangeSlider[1])-1,
+      as.Date(input$dateRangeSlider[2]))
+      )})
+  observeEvent(input$subDayEnd,
+    {updateSliderInput(session, "dateRangeSlider",
+      value=c(as.Date(input$dateRangeSlider[1]),
+      as.Date(input$dateRangeSlider[2])-1)
+      )})
+  observeEvent(input$addDayEnd,
+    {updateSliderInput(session, "dateRangeSlider",
+      value=c(as.Date(input$dateRangeSlider[1]),
+      as.Date(input$dateRangeSlider[2])+1)
+      )})
+
   # wait for query button to be pressed
   observeEvent(input$queryBtn, {
     # browser()
@@ -615,9 +646,9 @@ shinyServer(function(input, output, session) {
 
     # do some formatting on the point data
     days_of_week <- list("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-    pointX <- eval(parse(text = paste0("point$", input$paramX)))
-    pointY <- eval(parse(text = paste0("point$", input$paramY)))
-    pointZ <- eval(parse(text = paste0("point$", input$paramCol)))
+    pointX <- eval(parse(text = paste0("round(as.numeric(point$", input$paramX, "), 2)")))
+    pointY <- eval(parse(text = paste0("round(as.numeric(point$", input$paramY, "), 2)")))
+    pointZ <- eval(parse(text = paste0("round(as.numeric(point$", input$paramCol, "), 2)")))
     if(input$paramX == "min_of_day") pointX <- format((as_datetime(hms("00:00:00") + as.integer(ddays(pointX/1440)))),"%H:%M")
     if(input$paramY == "min_of_day") pointY <- format((as_datetime(hms("00:00:00") + as.integer(ddays(pointY/1440)))),"%H:%M")
     if(input$paramCol == "min_of_day") pointZ <- format((as_datetime(hms("00:00:00") + as.integer(ddays(pointZ/1440)))),"%H:%M")
