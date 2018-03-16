@@ -14,6 +14,7 @@ Electrical Analytics prototype user interface based on the R Shiny framework.
 * ``"RPostgreSQL"``
 * ``"ggpmisc"``
 * ``"dplyr"``
+* ``"shinyWidgets"``
 * ``"ggalt"``  - Use ``devtools::install_github('hrbrmstr/ggalt')``
 
 ### How do I get set up? ###
