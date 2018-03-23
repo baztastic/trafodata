@@ -240,6 +240,27 @@ calc_hourly_stats <- function(data_df) {
 	return(hourly_stats)
 }
 
+#' Calculate time statistics for an arbitrary time unit
+#' 
+#' Instead of a separate query, calculate the statistics inside R using dplyr and lubridate
+#' @param data.frame feeder_data object
+#' @param time string time unit e.g. "hour", "15 min"
+#' @return data.frame containing hourly statistics data
+
+calc_time_stats <- function(data_df, time="hour") {
+	time_stats <- data_df %>% 
+		mutate(DateTime = time_and_date) %>% 
+		group_by(time = floor_date(time_and_date, unit=time)) %>% 
+		summarise_all(funs(
+			max=max(., na.rm=TRUE),
+			mean=mean(., na.rm=TRUE),
+			min=min(., na.rm=TRUE),
+			sd=sd(., na.rm=TRUE)
+			)
+		)
+	return(time_stats)
+}
+
 #' Statistics by date
 #' 
 #' Query the database for summary data ordered by date. Min, average, max, standard deviation calculated by SQL

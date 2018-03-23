@@ -11,6 +11,27 @@ require(DT)
 
 # not used for now
 # library(shinyjs) # take a look at usability tweaks
+# jscode <- "shinyjs.init = function() {
+
+# var signaturePad = new SignaturePad(document.getElementById('signature-pad'), {
+#   backgroundColor: 'rgba(255, 255, 255, 0)',
+#   penColor: 'rgb(0, 0, 0)'
+# });
+# var saveButton = document.getElementById('save');
+# var cancelButton = document.getElementById('clear');
+
+# saveButton.addEventListener('click', function (event) {
+#   var data = signaturePad.toDataURL('image/png');
+
+# // Send data to server instead...
+#   window.open(data);
+# });
+
+# cancelButton.addEventListener('click', function (event) {
+#   signaturePad.clear();
+# });
+
+# }"
 
 # list of possible parameters from DB and calculated in baztools.R
 paramList <- list(
@@ -56,6 +77,7 @@ trafoSelectList<-list(
 shinyUI(fluidPage(
   tags$head(
     # tags$link(rel = "stylesheet", type = "text/css", href = "bootstrap-spacelab.min.css"),
+    # tags$script(src = "https://cdn.jsdelivr.net/npm/signature_pad@2.3.2/dist/signature_pad.min.js"),
     tags$link(rel = "stylesheet", type = "text/css", href = "bootstrap-solar.min.css"),
     tags$link(rel = "stylesheet", type = "text/css", href = "overrides.css"),
     tags$style(HTML(".col-sm-4 {
@@ -64,6 +86,8 @@ shinyUI(fluidPage(
   ),
   # Application title
   titlePanel("Electrical Analytics"),
+  # shinyjs::useShinyjs(),
+  # shinyjs::extendShinyjs(text = jscode),
 
   sidebarLayout(
     # sidebar with controls
@@ -218,10 +242,16 @@ shinyUI(fluidPage(
             ),
         tabPanel("Full Resolution",
             div(
+              # class="wrapper", 
               style = "position:relative;",
               plotOutput("plot", 
                          hover = hoverOpts("plot_hover", delay = 0, delayType = "debounce")),
               uiOutput("hover_info")
+              # HTML("<canvas id='signature-pad' class='signature-pad' width=600 height=400></canvas>"),
+              # HTML("<div>
+              #      <button id='save'>Save</button>
+              #      <button id='clear'>Clear</button>
+              #      </div>")
               )
             ),
         tabPanel("Daily Resolution",

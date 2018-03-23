@@ -38,6 +38,6 @@ Electrical Analytics prototype user interface based on the R Shiny framework.
 5. Run the app:
 
 * From the interpreter use ``shiny::runApp('path/to/repo')``
-* From the command line use ``R -e "shiny::runApp('path/to/repo', launch.browser=TRUE)"``
+* From the command line use ``R -e "shiny::runApp('path/to/repo', port=4815, launch.browser=TRUE)"``
 
 Note, the password for my db read-only user is hard-coded into ``baztools.R`` so please don't share it with anyone.

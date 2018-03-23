@@ -1,5 +1,7 @@
 .RData
 .Rhistory
+.DS_Store
 backups/
 out.csv
 shiny_ui.RData
+*.pdf

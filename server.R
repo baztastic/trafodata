@@ -646,7 +646,8 @@ shinyServer(function(input, output, session) {
 
     # do some formatting on the point data
     days_of_week <- list("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-    pointX <- eval(parse(text = paste0("round(as.numeric(point$", input$paramX, "), 2)")))
+    if(input$paramX != "time_and_date") pointX <- eval(parse(text = paste0("round(as.numeric(point$", input$paramX, "), 2)")))
+    else pointX <- eval(parse(text = paste0("point$", input$paramX)))
     pointY <- eval(parse(text = paste0("round(as.numeric(point$", input$paramY, "), 2)")))
     pointZ <- eval(parse(text = paste0("round(as.numeric(point$", input$paramCol, "), 2)")))
     if(input$paramX == "min_of_day") pointX <- format((as_datetime(hms("00:00:00") + as.integer(ddays(pointX/1440)))),"%H:%M")
