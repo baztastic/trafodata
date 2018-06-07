@@ -245,7 +245,7 @@ calc_hourly_stats <- function(data_df) {
 #' Instead of a separate query, calculate the statistics inside R using dplyr and lubridate
 #' @param data.frame feeder_data object
 #' @param time string time unit e.g. "hour", "15 min"
-#' @return data.frame containing hourly statistics data
+#' @return data.frame containing time statistics data
 
 calc_time_stats <- function(data_df, time="hour") {
 	time_stats <- data_df %>% 
@@ -258,6 +258,9 @@ calc_time_stats <- function(data_df, time="hour") {
 			sd=sd(., na.rm=TRUE)
 			)
 		)
+	if (time == "hour") {
+		time_stats$hour_fac <- as.factor(hour(time_stats$hour))
+	}
 	return(time_stats)
 }
 

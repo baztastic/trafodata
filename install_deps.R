@@ -10,7 +10,8 @@ list.of.packages <- c(
 	"ggpmisc",
 	"dplyr",
 	"ggalt",
-	"shinyWidgets"
+	"shinyWidgets",
+	"tictoc"
 	)
 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
@@ -18,5 +19,6 @@ new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"
 if(length(new.packages)) install.packages(new.packages[!new.packages=="ggTimeSeries"])
 if('ggTimeSeries' %in% new.packages) devtools::install_github('Ather-Energy/ggTimeSeries')
 if('ggalt' %in% new.packages) devtools::install_github("hrbrmstr/ggalt")
+if('tictoc' %in% new.packages) devtools::install_github("jabiru/tictoc")
 
 print("Done! Feel free to use shiny::runApp('.') now.")
