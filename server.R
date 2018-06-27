@@ -202,7 +202,7 @@ shinyServer(function(input, output, session) {
     # take a random subsample of the data
     if(nrow(df) > 10000){
       # limit number of points in full resolution to 10000
-      df <- df[sample(nrow(df),10000),]
+      df <- df[sample(nrow(df),10000*subsample),]
     }
     else {
       df <- df[sample(nrow(df),nrow(df)*subsample),]
