@@ -152,7 +152,7 @@ shinyServer(function(input, output, session) {
               }
         d$feeders <- get_feeders(con)
 
-        d$feeder_data <- get_data(con, feeders, as.integer(input$feederNumber), start_time, end_time)
+        d$feeder_data <- get_data(con, d$feeders, as.integer(input$feederNumber), start_time, end_time)
         if("tictoc" %in% (.packages())) {
                 timer <- toc()
                 days_int <- round(interval(ymd_hms(start_time), ymd_hms(end_time)) / days(1))
