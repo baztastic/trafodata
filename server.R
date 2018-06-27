@@ -200,7 +200,13 @@ shinyServer(function(input, output, session) {
       df$coldata.. <- as.integer(df$coldata..)
     }
     # take a random subsample of the data
-    df <- df[sample(nrow(df),nrow(df)*subsample),]
+    if(nrow(df) > 10000){
+      # limit number of points in full resolution to 10000
+      df <- df[sample(nrow(df),10000),]
+    }
+    else {
+      df <- df[sample(nrow(df),nrow(df)*subsample),]
+    }
     })
 
   # populate feeder and date selectors based on the trafoNumber
