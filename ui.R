@@ -4,34 +4,34 @@
 # Run install_deps.R to install missing packages
 
 library(shiny)
+# library(shinyjs) # take a look at usability tweaks
 library(RPostgreSQL)
 library(lubridate)
 library(shinyWidgets)
 require(DT)
 
 # not used for now
-# library(shinyjs) # take a look at usability tweaks
 # jscode <- "shinyjs.init = function() {
-
 # var signaturePad = new SignaturePad(document.getElementById('signature-pad'), {
 #   backgroundColor: 'rgba(255, 255, 255, 0)',
 #   penColor: 'rgb(0, 0, 0)'
 # });
 # var saveButton = document.getElementById('save');
 # var cancelButton = document.getElementById('clear');
-
 # saveButton.addEventListener('click', function (event) {
 #   var data = signaturePad.toDataURL('image/png');
-
 # // Send data to server instead...
 #   window.open(data);
 # });
-
 # cancelButton.addEventListener('click', function (event) {
 #   signaturePad.clear();
 # });
-
 # }"
+
+# useShinyjs()
+# jsCode <- 'shinyjs.init = function(){document.getElementsByTagName("form")[0].setAttribute("data-lpignore", "true"); alert("fired");}'
+# extendShinyjs(text = jsCode)
+# js$disableLastPass
 
 # list of possible parameters from DB and calculated in baztools.R
 paramList <- list(
@@ -81,8 +81,17 @@ shinyUI(fluidPage(
     tags$link(rel = "stylesheet", type = "text/css", href = "bootstrap-solar.min.css"),
     tags$link(rel = "stylesheet", type = "text/css", href = "overrides.css"),
     tags$style(HTML(".col-sm-4 {
-      height: 90vh; overflow-y: auto;
-      }")) # scroll sidebar
+                    height: 90vh; overflow-y: auto;
+                    }")), # scroll sidebar
+    tags$style(HTML('#queryBtn{
+                    background:radial-gradient(#ecaf3f, #cc880c);
+                    color:#002c37;
+                    font-weight:bold;
+                    border-color:#cc880c;
+                    }
+                    #queryBtn:hover{
+                    background:radial-gradient(#cc880c, #ecaf3f);
+                    }')) # call to action
   ),
   # Application title
   titlePanel("Electrical Analytics"),
@@ -92,6 +101,7 @@ shinyUI(fluidPage(
   sidebarLayout(
     # sidebar with controls
     sidebarPanel(
+      
       selectInput("trafoNumber", "Select Transformer:",
         choices=trafoSelectList
         ),
@@ -111,13 +121,16 @@ shinyUI(fluidPage(
       min = as.Date("2018-02-01"), max = Sys.Date(), 
       value = c(as.Date("2018-02-25"), Sys.Date())
       ),
-      actionButton("backWeek", "⬅️"),
-      actionButton("addDayStart", "+"),
-      actionButton("subDayStart", "–"),
-      actionButton("queryBtn", "Start Query"),
-      actionButton("subDayEnd", "–"),
-      actionButton("addDayEnd", "+"),
-      actionButton("fwdWeek", "➡️"),
+      tags$div(style="text-align: center;",
+        
+        actionButton("backWeek", "⬅️"),
+        actionButton("addDayStart", "+"),
+        actionButton("subDayStart", "–"),
+        actionButton("queryBtn", "Start Query"),
+        actionButton("subDayEnd", "–"),
+        actionButton("addDayEnd", "+"),
+        actionButton("fwdWeek", "➡️")
+      ),
       br(),
       br(),
       selectInput("paramX", "X Parameter:",
