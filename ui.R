@@ -83,7 +83,9 @@ shinyUI(fluidPage(
     tags$style(HTML(".col-sm-4 {
                     height: 90vh; overflow-y: auto;
                     }")), # scroll sidebar
+    tags$style(HTML(".action-button{display:inline-block;width:10%;")),
     tags$style(HTML('#queryBtn{
+                    width:20%;
                     background:radial-gradient(#ecaf3f, #cc880c);
                     color:#002c37;
                     font-weight:bold;
@@ -121,15 +123,25 @@ shinyUI(fluidPage(
       min = as.Date("2018-02-01"), max = Sys.Date(), 
       value = c(as.Date("2018-02-25"), Sys.Date())
       ),
-      tags$div(style="text-align: center;",
-        
-        actionButton("backWeek", "⬅️"),
-        actionButton("addDayStart", "+"),
-        actionButton("subDayStart", "–"),
-        actionButton("queryBtn", "Start Query"),
-        actionButton("subDayEnd", "–"),
-        actionButton("addDayEnd", "+"),
-        actionButton("fwdWeek", "➡️")
+      # tags$div(style="width:100%;text-align: center;",
+      #          
+      #          tags$div(style="display:inline-block;width:10%;", actionButton("backWeek", "⬅️")),
+      #          tags$div(style="display:inline-block;width:10%;", actionButton("addDayStart", "+")),
+      #          tags$div(style="display:inline-block;width:10%;", actionButton("subDayStart", "–")),
+      #          tags$div(style="display:inline-block;width:20%;", actionButton("queryBtn", "Start Query")),
+      #          tags$div(style="display:inline-block;width:10%;", actionButton("subDayEnd", "–")),
+      #          tags$div(style="display:inline-block;width:10%;", actionButton("addDayEnd", "+")),
+      #          tags$div(style="display:inline-block;width:10%;", actionButton("fwdWeek", "➡️"))
+      # ),
+      tags$div(style="width:100%;text-align: center;",
+               
+               actionButton("backWeek", "⬅️"),
+               actionButton("addDayStart", "+"),
+               actionButton("subDayStart", "–"),
+               actionButton("queryBtn", "Start Query"),
+               actionButton("subDayEnd", "–"),
+               actionButton("addDayEnd", "+"),
+               actionButton("fwdWeek", "➡️")
       ),
       br(),
       br(),
