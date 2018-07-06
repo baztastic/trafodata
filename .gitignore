@@ -5,4 +5,4 @@ backups/
 out.csv
 shiny_ui.RData
 *.pdf
-storage.R
+experiments/
