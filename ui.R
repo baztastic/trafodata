@@ -10,7 +10,7 @@ library(lubridate)
 library(shinyWidgets)
 require(DT)
 
-Sys.setenv(TZ="Europe/Dublin")
+Sys.setenv(TZ="UTC")
 
 # not used for now
 # jscode <- "shinyjs.init = function() {

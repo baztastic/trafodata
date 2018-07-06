@@ -21,6 +21,7 @@ library(ggExtra)
 library(dplyr) # for grouping by hour and day etc
 
 require(tictoc, quietly=TRUE) # for timing code (not essential)
+Sys.setenv(TZ="UTC")
 
 # not used for now
 # library("bazRtools") # using local source for convenience instead
@@ -50,6 +51,7 @@ shinyServer(function(input, output, session) {
   # declare data variables - actually reactive values now!
   d <- reactiveValues(
     feeder_data=data.frame(), 
+    stored_data=data.frame(),
     hourly_stats=data.frame(), 
     daily_stats=data.frame(), 
     feeders=data.frame()
@@ -113,8 +115,8 @@ shinyServer(function(input, output, session) {
       )
 
     # format the dates for SQL
-    start_time <- paste0("'", start_date-1, " 23:00:00", "'")
-    end_time <- paste0("'", end_date, " 22:59:59", "'")
+    start_time <- paste0("'", start_date, " 00:00:00", "'")
+    end_time <- paste0("'", end_date, " 23:59:59", "'")
 
     # try to connect to the database
     withProgress(message="Please Wait", style="notification", {
@@ -151,8 +153,8 @@ shinyServer(function(input, output, session) {
                 tic("get_data")
               }
         d$feeders <- get_feeders(con)
-
         d$feeder_data <- get_data(con, d$feeders, as.integer(input$feederNumber), start_time, end_time)
+
         if("tictoc" %in% (.packages())) {
                 timer <- toc()
                 days_int <- round(interval(ymd_hms(start_time), ymd_hms(end_time)) / days(1))
@@ -169,12 +171,19 @@ shinyServer(function(input, output, session) {
 
         d$hourly_stats <- calc_hourly_stats(d$feeder_data)
         d$daily_stats <- calc_daily_stats(d$feeder_data)
+        ## tryCatch here
         },
         error=function(cond){
+          print(cond)
           return()
-          })
-        # incProgress(detail="Closing connection")
-      # try(print(paste("Connection closed?", dbDisconnect(con))))
+        },
+        warning=function(cond){
+          print(cond)
+          return()
+        })
+    
+        #   })
+        ## tryCatch here
         incProgress(detail="Done!")
     })
   })
@@ -237,7 +246,7 @@ shinyServer(function(input, output, session) {
 
     updateSelectInput(session, "feederNumber",
       choices=feederSelectList[selected_trafo,],
-      selected = feederSelectList[[selected_trafo,1]],
+      selected = feederSelectList[[selected_trafo,1]]
       )
 
     updateSliderInput(session, "dateRangeSlider",
