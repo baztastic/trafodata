@@ -72,6 +72,23 @@ normalise <- function(x) {
 	return( (x-min(x))/(max(x)-min(x)) )
 }
 
+#' Time close
+#' 
+#' Check if two times are "close" together, within thresh minutes
+#' @param datetime time1
+#' @param datetime time2
+#' @param float thresh (optional)
+#' @return boolean
+
+timeClose <- function(time1, time2, thresh=5) {
+  if (abs(as.double(difftime(time1, time2, units="mins"))) <= thresh) {
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+}
+
+
 #' Start SQL
 #' 
 #' Open a connection to the TRANSGLOBAL transformer DB

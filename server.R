@@ -107,8 +107,9 @@ shinyServer(function(input, output, session) {
     }
     # dates from selector
     start_date <- ymd(input$dateRange[1])
-    end_date <- ymd(input$dateRange[2]+1)
-
+    # end_date <- ymd(input$dateRange[2]+1)
+    end_date <- ymd(input$dateRange[2])
+    
     updateSliderInput(session, "dateRangeSlider",
       value=c(as.Date(input$dateRange[1]),
       as.Date(input$dateRange[2]))
@@ -153,8 +154,81 @@ shinyServer(function(input, output, session) {
                 tic("get_data")
               }
         d$feeders <- get_feeders(con)
-        d$feeder_data <- get_data(con, d$feeders, as.integer(input$feederNumber), start_time, end_time)
-
+        if(length(d$feeder_data) > 0) {
+          # decide if the query is new data or a subset of data already queried
+          if(length(d$stored_data) == 0){
+            d$stored_data <- d$feeder_data
+          } else if(length(d$feeder_data$time_and_date) > length(d$stored_data$time_and_date)){
+            d$stored_data <- d$feeder_data
+          }
+          sd1 <- min(d$stored_data$time_and_date)
+          ed1 <- max(d$stored_data$time_and_date)
+          sd2 <- ymd_hms(start_time)
+          ed2 <- ymd_hms(end_time)
+          
+          if(timeClose(sd2, sd1) && timeClose(ed2, ed1)){
+            # no need to do new query, just return previous results
+            # print("identical")
+            return_data <- d$stored_data
+          } else if((sd2 > ed1 && !timeClose(sd2, ed1)) || (ed2 < sd1 && !timeClose(ed2, sd1))){
+            # discard old data, perform a new query
+            # gets way too complicated otherwise!!
+            # print("noncontiguous")
+            d$stored_data <- data.frame()
+            return_data <- get_data(con, d$feeders, as.integer(input$feederNumber), format(sd2, "'%Y-%m-%d %H:%M:%S'"), format(ed2, "'%Y-%m-%d %H:%M:%S'"))
+          } else if(((sd2 >= sd1 || timeClose(sd2, sd1)) && (ed2 <= ed1 || timeClose(ed2, ed1)))){
+            # return subset between sd2 and ed2
+            # print("inside")
+            return_data <- d$stored_data[which(
+              ymd_hms(d$stored_data$time_and_date) >= sd2 & 
+                ymd_hms(d$stored_data$time_and_date) <= ed2),]
+          } else if(sd2 < sd1 && (ed2 <= ed1 || timeClose(ed1, ed2)) && (ed2 >= sd1 || timeClose(sd1, ed2)) ){
+            # perform new query between sd2 and sd1
+            # merge new query with previous results
+            # return subset between sd2 and ed2
+            # print("leftside")
+            new_data <- get_data(con, d$feeders, as.integer(input$feederNumber), format(sd2, "'%Y-%m-%d %H:%M:%S'"), format(sd1, "'%Y-%m-%d %H:%M:%S'"))
+            d$stored_data <- rbind(new_data, d$stored_data)
+            return_data <- d$stored_data[which(
+              ymd_hms(d$stored_data$time_and_date) >= sd2 & 
+                ymd_hms(d$stored_data$time_and_date) <= ed2),]
+          } else if(ed2 > ed1 && (sd2 >= sd1 || timeClose(sd1, sd2)) && (sd2 <= ed1 || timeClose(ed1, sd2))){
+            # perform new query between ed1 and ed2
+            # merge new query with previous results
+            # return subset between sd2 and ed2
+            # print("rightside")
+            new_data <- get_data(con, d$feeders, as.integer(input$feederNumber), format(ed1, "'%Y-%m-%d %H:%M:%S'"), format(ed2, "'%Y-%m-%d %H:%M:%S'"))
+            d$stored_data <- rbind(d$stored_data, new_data)
+            return_data <- d$stored_data[which(
+              ymd_hms(d$stored_data$time_and_date) >= sd2 & 
+                ymd_hms(d$stored_data$time_and_date) <= ed2),]
+          } else if(sd2 < sd1 && ed2 > ed1 && !timeClose(sd1, sd2) && !timeClose(ed1, ed2)){
+            # perform new query between sd2 and sd1 AND ed1 and ed2
+            # merge new query with previous results
+            # return subset between sd2 and ed2
+            # print("outside")
+            left_data <- get_data(con, d$feeders, as.integer(input$feederNumber), format(sd2, "'%Y-%m-%d %H:%M:%S'"), format(sd1, "'%Y-%m-%d %H:%M:%S'"))
+            right_data <- get_data(con, d$feeders, as.integer(input$feederNumber), format(ed1, "'%Y-%m-%d %H:%M:%S'"), format(ed2, "'%Y-%m-%d %H:%M:%S'"))
+            d$stored_data <- rbind(left_data, d$stored_data, right_data)
+            return_data <- d$stored_data[which(
+              ymd_hms(d$stored_data$time_and_date) >= sd2 & 
+                ymd_hms(d$stored_data$time_and_date) <= ed2),]
+          } else {
+            # Not sure how it would get to here, so just print the times and return the old data
+            print("???")
+            print("old times")
+            print(c(sd1, ed1))
+            print("new times")
+            print(c(sd2, ed2))
+            print("???")
+            print("")
+            return_data <- d$stored_data
+          }
+          d$feeder_data <- return_data
+        }else{
+          d$feeder_data <- get_data(con, d$feeders, as.integer(input$feederNumber), start_time, end_time)
+        }
+        
         if("tictoc" %in% (.packages())) {
                 timer <- toc()
                 days_int <- round(interval(ymd_hms(start_time), ymd_hms(end_time)) / days(1))
@@ -171,7 +245,6 @@ shinyServer(function(input, output, session) {
 
         d$hourly_stats <- calc_hourly_stats(d$feeder_data)
         d$daily_stats <- calc_daily_stats(d$feeder_data)
-        ## tryCatch here
         },
         error=function(cond){
           print(cond)
@@ -181,9 +254,6 @@ shinyServer(function(input, output, session) {
           print(cond)
           return()
         })
-    
-        #   })
-        ## tryCatch here
         incProgress(detail="Done!")
     })
   })
@@ -262,8 +332,17 @@ shinyServer(function(input, output, session) {
       start=ymd(date_ranges[selected_trafo, "max"])-4,
       end=date_ranges[selected_trafo, "max"]
       )
-    })
-
+  })
+  
+  # discard stored data when changing transformer/feeder
+  observeEvent({
+    input$feederNumber
+    input$trafoNumber
+    },{
+    d$stored_data <- data.frame()
+    d$feeder_data <- data.frame()
+  })
+  
   # take the x parameter chosen and form a valid R variable name
   xdata <- reactive({
     # everything to be refreshed needs to be connected to queryBtn
