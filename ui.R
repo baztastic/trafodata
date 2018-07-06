@@ -85,7 +85,13 @@ shinyUI(fluidPage(
     tags$style(HTML(".col-sm-4 {
                     height: 90vh; overflow-y: auto;
                     }")), # scroll sidebar
-    tags$style(HTML(".action-button{display:inline-block;width:10%;")),
+    tags$style(HTML(".action-button{
+                    display:inline-block;
+                    width:10%;
+                    padding-left:0px;
+                    padding-right:0px;
+                    margin:auto;"
+                    )),
     tags$style(HTML('#queryBtn{
                     width:20%;
                     background:radial-gradient(#ecaf3f, #cc880c);
@@ -129,7 +135,7 @@ shinyUI(fluidPage(
                actionButton("backWeek", "⬅️"),
                actionButton("addDayStart", "+"),
                actionButton("subDayStart", "–"),
-               actionButton("queryBtn", "Start Query"),
+               actionButton("queryBtn", "Go"),
                actionButton("subDayEnd", "–"),
                actionButton("addDayEnd", "+"),
                actionButton("fwdWeek", "➡️")
