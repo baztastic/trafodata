@@ -89,7 +89,7 @@ shinyUI(fluidPage(
                     display:inline-block;
                     width:10%;
                     padding-left:0px;
-                    padding-right:0px;"
+                    padding-right:0px;}"
                     )),
     tags$style(HTML('#queryBtn{
                     width:20%;
