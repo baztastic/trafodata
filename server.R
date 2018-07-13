@@ -19,6 +19,7 @@ library(ggTimeSeries)
 library(gridExtra)
 library(ggExtra)
 library(dplyr) # for grouping by hour and day etc
+library(shinyjs)
 
 require(tictoc, quietly=TRUE) # for timing code (not essential)
 Sys.setenv(TZ="UTC")
@@ -56,6 +57,7 @@ shinyServer(function(input, output, session) {
     daily_stats=data.frame(), 
     feeders=data.frame()
     )
+  disable(id="dateRangeExtents")
 
   observeEvent({
     input$dateRangeSlider
@@ -112,9 +114,13 @@ shinyServer(function(input, output, session) {
     
     updateSliderInput(session, "dateRangeSlider",
       value=c(as.Date(input$dateRange[1]),
-      as.Date(input$dateRange[2]))
+              as.Date(input$dateRange[2]))
       )
-
+    updateSliderInput(session, "dateRangeExtents",
+      value=c(as.Date(input$dateRange[1]),
+              as.Date(input$dateRange[2]))
+    )
+    
     # format the dates for SQL
     start_time <- paste0("'", start_date, " 00:00:00", "'")
     end_time <- paste0("'", end_date, " 23:59:59", "'")
@@ -225,9 +231,15 @@ shinyServer(function(input, output, session) {
             return_data <- d$stored_data
           }
           d$feeder_data <- return_data
+          updateSliderInput(session, "dateRangeExtents",
+                            value=c(as.Date(ymd_hms(min(d$stored_data$time_and_date))),
+                                    as.Date(ymd_hms(max(d$stored_data$time_and_date))))
+          )
         }else{
           d$feeder_data <- get_data(con, d$feeders, as.integer(input$feederNumber), start_time, end_time)
         }
+        
+        
         
         if("tictoc" %in% (.packages())) {
                 timer <- toc()
@@ -325,7 +337,13 @@ shinyServer(function(input, output, session) {
       value=c(as.Date(ymd(date_ranges[selected_trafo, "max"])-4),
       as.Date(date_ranges[selected_trafo, "max"]))
       )
-
+    updateSliderInput(session, "dateRangeExtents",
+      min=as.Date(date_ranges[selected_trafo, "min"]),
+      max=as.Date(date_ranges[selected_trafo, "max"]),
+      value=c(as.Date(ymd(date_ranges[selected_trafo, "max"])-4),
+      as.Date(date_ranges[selected_trafo, "max"]))
+    )
+    
     updateDateRangeInput(session, "dateRange",
       min=date_ranges[selected_trafo, "min"],
       max=date_ranges[selected_trafo, "max"],

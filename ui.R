@@ -4,7 +4,7 @@
 # Run install_deps.R to install missing packages
 
 library(shiny)
-# library(shinyjs) # take a look at usability tweaks
+library(shinyjs) # take a look at usability tweaks
 library(RPostgreSQL)
 library(lubridate)
 library(shinyWidgets)
@@ -29,7 +29,6 @@ Sys.setenv(TZ="UTC")
 #   signaturePad.clear();
 # });
 # }"
-
 # useShinyjs()
 # jsCode <- 'shinyjs.init = function(){document.getElementsByTagName("form")[0].setAttribute("data-lpignore", "true"); alert("fired");}'
 # extendShinyjs(text = jsCode)
@@ -102,6 +101,7 @@ shinyUI(fluidPage(
                     background:radial-gradient(#cc880c, #ecaf3f);
                     }')) # call to action
   ),
+  useShinyjs(),
   # Application title
   titlePanel("Electrical Analytics"),
   # shinyjs::useShinyjs(),
@@ -125,14 +125,31 @@ shinyUI(fluidPage(
         # min="2017-08-23",
         # max=today()
         ),
-      sliderInput("dateRangeSlider", 
-        label = NULL, 
-        min = as.Date("2018-02-01"), 
-        max = Sys.Date(), 
-        value = c(
-          as.Date("2018-02-25"), 
-          Sys.Date()
+      tags$div(style="position:relative;",
+        tags$div(style="position:absolute; top:0; left:0; width:100%;",
+          sliderInput("dateRangeExtents", 
+            label = NULL, 
+            min = as.Date("2018-02-01"), 
+            max = Sys.Date(), 
+            value = c(
+              as.Date("2018-02-25"), 
+              Sys.Date()
+            ),
+            ticks=FALSE,
+            dragRange=FALSE
           )
+        ),
+        tags$div(style="",
+          sliderInput("dateRangeSlider", 
+            label = NULL, 
+            min = as.Date("2018-02-01"), 
+            max = Sys.Date(), 
+            value = c(
+              as.Date("2018-02-25"), 
+              Sys.Date()
+              )
+          )
+        )
       ),
       tags$div(style="width:100%;text-align: center;",
                actionButton("backWeek", "⬅️"),

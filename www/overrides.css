@@ -21,11 +21,37 @@
 }
 
 .irs-slider{
-    top: 40%;
-    width: 3px;
-    height: 10px;
+  top: 40%;
+  width: 3px;
+  height: 10px;
 }
 
+.irs-disabled{
+  opacity:0.9;
+}
+
+.js-irs-0 .irs-slider{
+  top: 32px;
+  width: 3px;
+  border: #cc880c;
+  background: #ecaf3f;
+}
+
+.js-irs-0 .irs-from{
+  visibility: hidden !important;
+}
+.js-irs-0 .irs-to{
+  visibility: hidden !important;
+}
+.js-irs-0 .irs-min{
+  visibility: hidden !important;
+}
+.js-irs-0 .irs-max{
+  visibility: hidden !important;
+}
+.js-irs-0 .irs-single {
+  visibility: hidden !important;
+}
 /*.signature-pad {
   position: absolute;
   left: 0;
