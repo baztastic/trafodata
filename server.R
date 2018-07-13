@@ -184,6 +184,7 @@ shinyServer(function(input, output, session) {
             # print("noncontiguous")
             d$stored_data <- data.frame()
             return_data <- get_data(con, d$feeders, as.integer(input$feederNumber), format(sd2, "'%Y-%m-%d %H:%M:%S'"), format(ed2, "'%Y-%m-%d %H:%M:%S'"))
+            d$stored_data <- return_data
           } else if(((sd2 >= sd1 || timeClose(sd2, sd1)) && (ed2 <= ed1 || timeClose(ed2, ed1)))){
             # return subset between sd2 and ed2
             # print("inside")
