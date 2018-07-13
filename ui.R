@@ -152,13 +152,15 @@ shinyUI(fluidPage(
         )
       ),
       tags$div(style="width:100%;text-align: center;",
-               actionButton("backWeek", "⬅️"),
+               actionButton("backWeek", "<️"),
+               # actionButton("backWeek", "⬅️"),
                actionButton("addDayStart", "+"),
                actionButton("subDayStart", "–"),
                actionButton("queryBtn", "Go"),
                actionButton("subDayEnd", "–"),
                actionButton("addDayEnd", "+"),
-               actionButton("fwdWeek", "➡️")
+               actionButton("fwdWeek", ">")
+               # actionButton("fwdWeek", "➡️")
       ),
       br(),
       br(),
