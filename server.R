@@ -57,7 +57,9 @@ shinyServer(function(input, output, session) {
     daily_stats=data.frame(), 
     feeders=data.frame()
     )
+  # shinyjs functions
   disable(id="dateRangeExtents")
+  addCssClass("trafoNumber", "search")
 
   observeEvent({
     input$dateRangeSlider
