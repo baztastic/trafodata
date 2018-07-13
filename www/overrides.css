@@ -20,7 +20,7 @@
 	color: #839496;
 }
 
-.irs-slider{
+.js-irs-1 .irs-slider{
   top: 40%;
   width: 3px;
   height: 10px;
@@ -33,6 +33,7 @@
 .js-irs-0 .irs-slider{
   top: 32px;
   width: 3px;
+  height: 10px;
   border: #cc880c;
   background: #ecaf3f;
 }
