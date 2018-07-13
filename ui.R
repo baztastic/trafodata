@@ -126,9 +126,13 @@ shinyUI(fluidPage(
         # max=today()
         ),
       sliderInput("dateRangeSlider", 
-      label = NULL, 
-      min = as.Date("2018-02-01"), max = Sys.Date(), 
-      value = c(as.Date("2018-02-25"), Sys.Date())
+        label = NULL, 
+        min = as.Date("2018-02-01"), 
+        max = Sys.Date(), 
+        value = c(
+          as.Date("2018-02-25"), 
+          Sys.Date()
+          )
       ),
       tags$div(style="width:100%;text-align: center;",
                actionButton("backWeek", "⬅️"),

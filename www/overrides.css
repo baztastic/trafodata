@@ -20,12 +20,11 @@
 	color: #839496;
 }
 
-.irs-slider {
+.irs-slider{
     top: 40%;
-    width: 2px;
+    width: 3px;
     height: 10px;
 }
-
 
 /*.signature-pad {
   position: absolute;
