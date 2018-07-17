@@ -9,6 +9,7 @@ library(RPostgreSQL)
 library(lubridate)
 library(shinyWidgets)
 require(DT)
+library(dygraphs)
 
 Sys.setenv(TZ="UTC")
 
@@ -302,6 +303,11 @@ shinyUI(fluidPage(
             div(style = "position:relative;",
               plotOutput("dailyScatter")
               )
+            ),
+        tabPanel("dyGraphs",
+                 div(style = "position:relative;",
+                     dygraphOutput("dygraph")
+                 )
             )
           ),
       tabsetPanel(

@@ -20,6 +20,7 @@ library(gridExtra)
 library(ggExtra)
 library(dplyr) # for grouping by hour and day etc
 library(shinyjs)
+library(dygraphs)
 
 require(tictoc, quietly=TRUE) # for timing code (not essential)
 Sys.setenv(TZ="UTC")
@@ -633,6 +634,37 @@ shinyServer(function(input, output, session) {
       # incProgress(1/6)
     })
   })
+  
+  output$dygraph <- renderDygraph({
+    btnPress <- input$queryBtn
+    if(btnPress == 0) return(NULL)
+    # if(input$paramX != "time_and_date") return(NULL)
+
+    # make data frame
+    df <- d$feeder_data
+    df <- unique(df)
+    q <- data.frame(eval(parse(text = paste0("df$", input$paramY))), eval(parse(text = paste0("df$", input$paramCol))))
+    
+    rownames(q) <- df$time_and_date
+    colnames(q) <- c(input$paramY, input$paramCol)
+    dygraph(q) %>% 
+      dyRangeSelector() %>%
+      dyShading(
+        from = min(df$time_and_date), 
+        to = max(df$time_and_date),
+        color="white"
+        ) %>%
+      dyAxis("y", label=input$paramY) %>%
+      dyAxis("y2", label=input$paramCol, independentTicks = TRUE, drawGrid=FALSE) %>%
+      dySeries(input$paramY, axis='y') %>%
+      dySeries(input$paramCol, axis='y2') %>%
+      dyOptions(
+        axisLabelColor = "white",
+        colors = RColorBrewer::brewer.pal(3, "Set2"),
+        drawPoints = FALSE,
+        strokeBorderWidth = 0.1
+        )
+    })
 
   # Generate an HTML table view of the data
   output$dataTable <- renderDataTable({

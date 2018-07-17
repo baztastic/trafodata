@@ -151,6 +151,8 @@ get_data <- function(connection, feeders_info, feeder_id=1, start_time="'2017-06
 	
 	trafo_id <- feeders_info$transformer[feeder_id]
 	trafo_feeders <- feeders_info[which(feeders_info$transformer == trafo_id),]
+	# think about grabbing all feeders for a particular trafo?
+	# "WHERE feeder_stats.feeder_id IN ", paste0("(", paste0(trafo_feeders$id, collapse=", "), ")"),
 	# throw out phase_type=0 since there are only 3 phases
 	phase_ids <- unique(trafo_feeders$phase[which(trafo_feeders$phase_type != 0)])
 	phase_ids <- sort(phase_ids)
