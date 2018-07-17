@@ -58,10 +58,15 @@ shinyServer(function(input, output, session) {
     daily_stats=data.frame(), 
     feeders=data.frame()
     )
+
   # shinyjs functions
   disable(id="dateRangeExtents")
+  
+  # trying to disable lastpass fill
   addCssClass("trafoNumber", "search")
-
+  runjs('document.getElementsByTagName("form")[0].setAttribute("data-lpignore", "");')
+  runjs('document.getElementsByTagName("select")[0].setAttribute("data-lpignore", "");')
+  
   observeEvent({
     input$dateRangeSlider
     }, ignoreInit=TRUE, {

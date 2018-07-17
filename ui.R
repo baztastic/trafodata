@@ -108,7 +108,7 @@ shinyUI(fluidPage(
              ),
   # shinyjs::useShinyjs(),
   # shinyjs::extendShinyjs(text = jscode),
-  actionButton("toggle", "Menu"),
+  actionButton("toggle", "Menu", width="90px"),
   sidebarLayout(
     # sidebar with controls
     conditionalPanel(
