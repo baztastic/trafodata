@@ -672,6 +672,7 @@ shinyServer(function(input, output, session) {
         width=160
         ) %>%
       dyRoller(rollPeriod = 1) %>%
+      dyUnzoom() %>%
       dyOptions(
         # axisLabelColor = "white",
         drawPoints = FALSE,
