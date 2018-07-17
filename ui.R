@@ -30,7 +30,7 @@ Sys.setenv(TZ="UTC")
 #   signaturePad.clear();
 # });
 # }"
-# useShinyjs()
+
 # jsCode <- 'shinyjs.init = function(){document.getElementsByTagName("form")[0].setAttribute("data-lpignore", "true"); alert("fired");}'
 # extendShinyjs(text = jsCode)
 # js$disableLastPass
@@ -304,8 +304,8 @@ shinyUI(fluidPage(
               plotOutput("dailyScatter")
               )
             ),
-        tabPanel("dyGraphs",
-                 div(style = "position:relative;",
+        tabPanel("Compare Timeseries",
+                 div(style = "position:relative; background-color:white;",
                      dygraphOutput("dygraph")
                  )
             )

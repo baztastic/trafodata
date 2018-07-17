@@ -651,16 +651,29 @@ shinyServer(function(input, output, session) {
       dyRangeSelector() %>%
       dyShading(
         from = min(df$time_and_date), 
-        to = max(df$time_and_date),
-        color="white"
+        to = max(df$time_and_date)
+        # color="white"
         ) %>%
       dyAxis("y", label=input$paramY) %>%
       dyAxis("y2", label=input$paramCol, independentTicks = TRUE, drawGrid=FALSE) %>%
-      dySeries(input$paramY, axis='y') %>%
-      dySeries(input$paramCol, axis='y2') %>%
+      dySeries(
+        input$paramY, 
+        axis='y',
+        color=paste0("rgba(253,0,15,",input$alpha,")") #red
+        ) %>%
+      dySeries(
+        input$paramCol, 
+        axis='y2',
+        color=paste0("rgba(25,0,255,",input$alpha,")") #blue
+        ) %>%
+      dyHighlight() %>%
+      dyLegend(
+        show="follow",
+        width=160
+        ) %>%
+      dyRoller(rollPeriod = 1) %>%
       dyOptions(
-        axisLabelColor = "white",
-        colors = RColorBrewer::brewer.pal(3, "Set2"),
+        # axisLabelColor = "white",
         drawPoints = FALSE,
         strokeBorderWidth = 0.1
         )
