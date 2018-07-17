@@ -11,7 +11,9 @@ list.of.packages <- c(
 	"dplyr",
 	"ggalt",
 	"shinyWidgets",
-	"tictoc"
+	"tictoc",
+	"dygraphs",
+	"shinyjs"
 	)
 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
