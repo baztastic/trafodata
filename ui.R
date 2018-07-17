@@ -104,177 +104,180 @@ shinyUI(fluidPage(
   ),
   useShinyjs(),
   # Application title
-  titlePanel("Electrical Analytics"),
+  titlePanel("Electrical Analytics"
+             ),
   # shinyjs::useShinyjs(),
   # shinyjs::extendShinyjs(text = jscode),
-
+  actionButton("toggle", "Menu"),
   sidebarLayout(
     # sidebar with controls
-    sidebarPanel(
-      
-      selectInput("trafoNumber", "Select Transformer:",
-        choices=trafoSelectList
-        ),
-      # this is populated from server.R once trafoNumber is chosen
-      selectInput("feederNumber", "Select Feeder:",
-        choices=list("First select a transformer"="")
-        ),
-      dateRangeInput("dateRange", "Select Date Range:", 
-        format="dd/mm/yyyy"
-        # start=today()-4, 
-        # end=today(), 
-        # min="2017-08-23",
-        # max=today()
-        ),
-      tags$div(style="position:relative;",
-        tags$div(style="position:absolute; top:0; left:0; width:100%;",
-          sliderInput("dateRangeExtents", 
-            label = NULL, 
-            min = as.Date("2018-02-01"), 
-            max = Sys.Date(), 
-            value = c(
-              as.Date("2018-02-25"), 
-              Sys.Date()
-            ),
-            ticks=FALSE,
-            dragRange=FALSE
-          )
-        ),
-        tags$div(style="",
-          sliderInput("dateRangeSlider", 
-            label = NULL, 
-            min = as.Date("2018-02-01"), 
-            max = Sys.Date(), 
-            value = c(
-              as.Date("2018-02-25"), 
-              Sys.Date()
-              )
-          )
-        )
-      ),
-      tags$div(style="width:100%;text-align: center;",
-               actionButton("backWeek", "<️"),
-               # actionButton("backWeek", "⬅️"),
-               actionButton("addDayStart", "+"),
-               actionButton("subDayStart", "–"),
-               actionButton("queryBtn", "Go"),
-               actionButton("subDayEnd", "–"),
-               actionButton("addDayEnd", "+"),
-               actionButton("fwdWeek", ">")
-               # actionButton("fwdWeek", "➡️")
-      ),
-      br(),
-      br(),
-      selectInput("paramX", "X Parameter:",
-                   paramList,
-                   selected = paramList[1]),
-
-      selectInput("paramY", "Y Parameter:",
-                   paramList,
-                   selected = paramList[2]),
-
-      selectInput("paramCol", "Colour Parameter:",
-                   paramList,
-                   selected = paramList[10]),
-      
-      switchInput("advanced", offLabel="Simple", onLabel="Advanced"),
-
-      conditionalPanel
-        (
-        condition = "input.advanced == true",
-        sliderInput("alpha", 
-                    "Alpha:", 
-                     value = 0.5,
-                     min = 0, 
-                     max = 1,
-                     step = 0.01),
-
-        sliderInput("n", 
-                    "Subsampling percentage:", 
-                     value = 100,
-                     min = 1, 
-                     max = 100),
-
-        radioButtons("smoothOption", "Add trend line?",
-                      list("Yes" = TRUE,
-                        "No" = FALSE
-                        ),
-                      selected=TRUE
-                      ),
-        conditionalPanel(
-          condition = "input.smoothOption == 'TRUE'",  # note this is javascript notation
-          selectInput("smoothType", "Fitting type",
-            list("Linear" = "lm",
-              # "glm",
-              # "gam",
-              "Best fit" = "loess"
-              # "rlm"
-              ),
-            selected="loess"
-            )        
+    conditionalPanel(
+      condition="input.toggle % 2 == 0",
+      sidebarPanel(
+        selectInput("trafoNumber", "Select Transformer:",
+          choices=trafoSelectList
           ),
-        # too complicated - need to guess starting values
-        # textInput("arbFitting",
-        #   label="Arbitrary Fitting Function:",
-        #   value="y ~ a * I(log(x + b)) + c",
-        #   width="100%",
-        #   placeholder="e.g. y ~ x"
-        #   ),
-
-        radioButtons("normOption", "Normalise?",
-                      list("Yes" = TRUE,
-                        "No" = FALSE
+        # this is populated from server.R once trafoNumber is chosen
+        selectInput("feederNumber", "Select Feeder:",
+          choices=list("First select a transformer"="")
+          ),
+        dateRangeInput("dateRange", "Select Date Range:", 
+          format="dd/mm/yyyy"
+          # start=today()-4, 
+          # end=today(), 
+          # min="2017-08-23",
+          # max=today()
+          ),
+        tags$div(style="position:relative;",
+          tags$div(style="position:absolute; top:0; left:0; width:100%;",
+            sliderInput("dateRangeExtents", 
+              label = NULL, 
+              min = as.Date("2018-02-01"), 
+              max = Sys.Date(), 
+              value = c(
+                as.Date("2018-02-25"), 
+                Sys.Date()
+              ),
+              ticks=FALSE,
+              dragRange=FALSE
+            )
+          ),
+          tags$div(style="",
+            sliderInput("dateRangeSlider", 
+              label = NULL, 
+              min = as.Date("2018-02-01"), 
+              max = Sys.Date(), 
+              value = c(
+                as.Date("2018-02-25"), 
+                Sys.Date()
+                )
+            )
+          )
+        ),
+        tags$div(style="width:100%;text-align: center;",
+                 actionButton("backWeek", "<️"),
+                 # actionButton("backWeek", "⬅️"),
+                 actionButton("addDayStart", "+"),
+                 actionButton("subDayStart", "–"),
+                 actionButton("queryBtn", "Go"),
+                 actionButton("subDayEnd", "–"),
+                 actionButton("addDayEnd", "+"),
+                 actionButton("fwdWeek", ">")
+                 # actionButton("fwdWeek", "➡️")
+        ),
+        br(),
+        br(),
+        selectInput("paramX", "X Parameter:",
+                     paramList,
+                     selected = paramList[1]),
+  
+        selectInput("paramY", "Y Parameter:",
+                     paramList,
+                     selected = paramList[2]),
+  
+        selectInput("paramCol", "Colour Parameter:",
+                     paramList,
+                     selected = paramList[10]),
+        
+        switchInput("advanced", offLabel="Simple", onLabel="Advanced"),
+  
+        conditionalPanel
+          (
+          condition = "input.advanced == true",
+          sliderInput("alpha", 
+                      "Alpha:", 
+                       value = 0.5,
+                       min = 0, 
+                       max = 1,
+                       step = 0.01),
+  
+          sliderInput("n", 
+                      "Subsampling percentage:", 
+                       value = 100,
+                       min = 1, 
+                       max = 100),
+  
+          radioButtons("smoothOption", "Add trend line?",
+                        list("Yes" = TRUE,
+                          "No" = FALSE
+                          ),
+                        selected=TRUE
                         ),
-                        selected = FALSE),
-
-        radioButtons("plotType", "Plot type:",
-                      list("Points" = "geom_point",
-                        "Line" = "geom_line"
+          conditionalPanel(
+            condition = "input.smoothOption == 'TRUE'",  # note this is javascript notation
+            selectInput("smoothType", "Fitting type",
+              list("Linear" = "lm",
+                # "glm",
+                # "gam",
+                "Best fit" = "loess"
+                # "rlm"
+                ),
+              selected="loess"
+              )        
+            ),
+          # too complicated - need to guess starting values
+          # textInput("arbFitting",
+          #   label="Arbitrary Fitting Function:",
+          #   value="y ~ a * I(log(x + b)) + c",
+          #   width="100%",
+          #   placeholder="e.g. y ~ x"
+          #   ),
+  
+          radioButtons("normOption", "Normalise?",
+                        list("Yes" = TRUE,
+                          "No" = FALSE
+                          ),
+                          selected = FALSE),
+  
+          radioButtons("plotType", "Plot type:",
+                        list("Points" = "geom_point",
+                          "Line" = "geom_line"
+                          ),
+                        selected = "geom_point"),
+  
+          selectInput("yScaleType", "Y-scale transformation:",
+                        list("No scaling" = "identity",
+                          "Log base 10" = "log10",
+                          "Natural Log" = "log",
+                          "Reciprocal" = "reciprocal",
+                          "Exponential" = "exp",
+                          "Reverse" = "reverse",
+                          "Square root" = "sqrt",
+                          "Arc-sin square root" = "asn",
+                          "Arc-tan" = "atanh",
+                          # "Box-cox" = "boxcox",
+                          "Log + 1" = "log1p",
+                          "Log base 2" = "log2"
+                          # "Inverse sigmoidal" = "logit"
+                          # "Probability" = "probability",
+                          # "Probit" = "probit",
+                          ),
+                        selected="identity"
                         ),
-                      selected = "geom_point"),
-
-        selectInput("yScaleType", "Y-scale transformation:",
-                      list("No scaling" = "identity",
-                        "Log base 10" = "log10",
-                        "Natural Log" = "log",
-                        "Reciprocal" = "reciprocal",
-                        "Exponential" = "exp",
-                        "Reverse" = "reverse",
-                        "Square root" = "sqrt",
-                        "Arc-sin square root" = "asn",
-                        "Arc-tan" = "atanh",
-                        # "Box-cox" = "boxcox",
-                        "Log + 1" = "log1p",
-                        "Log base 2" = "log2"
-                        # "Inverse sigmoidal" = "logit"
-                        # "Probability" = "probability",
-                        # "Probit" = "probit",
+  
+          selectInput("xScaleType", "X-scale transformation:",
+                        list("No scaling" = "identity",
+                          "Log base 10" = "log10",
+                          "Natural Log" = "log",
+                          "Reciprocal" = "reciprocal",
+                          "Exponential" = "exp",
+                          "Reverse" = "reverse",
+                          "Square root" = "sqrt",
+                          "Arc-sin square root" = "asn",
+                          "Arc-tan" = "atanh",
+                          # "Box-cox" = "boxcox",
+                          "Log + 1" = "log1p",
+                          "Log base 2" = "log2"
+                          # "Inverse sigmoidal" = "logit"
+                          # "Probability" = "probability",
+                          # "Probit" = "probit",
+                          ),
+                        selected="identity"
                         ),
-                      selected="identity"
-                      ),
-
-        selectInput("xScaleType", "X-scale transformation:",
-                      list("No scaling" = "identity",
-                        "Log base 10" = "log10",
-                        "Natural Log" = "log",
-                        "Reciprocal" = "reciprocal",
-                        "Exponential" = "exp",
-                        "Reverse" = "reverse",
-                        "Square root" = "sqrt",
-                        "Arc-sin square root" = "asn",
-                        "Arc-tan" = "atanh",
-                        # "Box-cox" = "boxcox",
-                        "Log + 1" = "log1p",
-                        "Log base 2" = "log2"
-                        # "Inverse sigmoidal" = "logit"
-                        # "Probability" = "probability",
-                        # "Probit" = "probit",
-                        ),
-                      selected="identity"
-                      ),
+          br()
+        ),
         br()
-      ),
-      br()
+      )
     ),
 
     # main tabbed panel with plots and data representation
