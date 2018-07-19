@@ -509,6 +509,16 @@ shinyServer(function(input, output, session) {
     withProgress(message="Rendering Plot", detail="Please Wait", {
     # make data frame
       # df <- subSampling()
+      if (input$paramX != "time_and_date") {
+        xText <- paste0("d$hourly_stats$", input$paramX, "_mean")
+      } else{
+        xText <- paste0("d$hourly_stats$", input$paramX)
+      }
+      if (input$paramCol != "time_and_date") {
+        colText <- paste0("d$hourly_stats$", input$paramCol, "_mean")
+      } else{
+        colText <- paste0("d$hourly_stats$", input$paramCol)
+      }
       xdata <- eval(parse(text = paste0("d$hourly_stats$", input$paramX, "_mean")))
       ydata <- eval(parse(text = paste0("d$hourly_stats$", input$paramY, "_mean")))
       coldata <- eval(parse(text = paste0("d$hourly_stats$", input$paramCol, "_mean")))
@@ -674,7 +684,8 @@ shinyServer(function(input, output, session) {
       dyHighlight() %>%
       dyLegend(
         show="follow",
-        width=160
+        width=160,
+        labelsSeparateLines = T
         ) %>%
       dyRoller(rollPeriod = 1) %>%
       dyUnzoom() %>%
@@ -744,8 +755,6 @@ shinyServer(function(input, output, session) {
   output$hourlyplot <- renderPlot({
     if(input$queryBtn == 0) return(NULL)
     hourly_fill <- eval(parse(text = paste0("d$hourly_stats$", input$paramY, "_mean")))
-    # hourly_fill <- d$hourly_stats$avgreal
-    # hourly_fill <- d$hourly_stats$avg
 
     plot1 <- ggplot(d$hourly_stats, 
       aes(as_date(d$hourly_stats$hour), d$hourly_stats$hour_fac)
@@ -754,10 +763,8 @@ shinyServer(function(input, output, session) {
       ylim(rev(levels(d$hourly_stats$hour_fac))) + 
       scale_fill_continuous(low=colors[3,1], high=colors[1,2]) + 
       scale_x_date(date_breaks = "day", date_labels = "%a %d %b") +
-    #   scale_x_date(date_breaks = "month", date_labels = "%B") +
       labs(
         fill=paste0("Average\n", input$paramY), 
-        # fill=paste0("Average\n", input$paramY), 
         x="Date", 
         y="Time") +
       theme(axis.text.x = element_text(angle = 90, hjust = 1))
