@@ -509,6 +509,8 @@ shinyServer(function(input, output, session) {
     withProgress(message="Rendering Plot", detail="Please Wait", {
     # make data frame
       # df <- subSampling()
+      
+      ## this isn't used yet, trying to figure out if it's necessary
       if (input$paramX != "time_and_date") {
         xText <- paste0("d$hourly_stats$", input$paramX, "_mean")
       } else{
@@ -519,6 +521,8 @@ shinyServer(function(input, output, session) {
       } else{
         colText <- paste0("d$hourly_stats$", input$paramCol)
       }
+      ##
+      
       xdata <- eval(parse(text = paste0("d$hourly_stats$", input$paramX, "_mean")))
       ydata <- eval(parse(text = paste0("d$hourly_stats$", input$paramY, "_mean")))
       coldata <- eval(parse(text = paste0("d$hourly_stats$", input$paramCol, "_mean")))

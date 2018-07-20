@@ -221,7 +221,7 @@ get_data <- function(connection, feeders_info, feeder_id=1, start_time="'2017-06
 #' Calculate daily statistics
 #' 
 #' Instead of a separate query, calculate the statistics inside R using dplyr and lubridate
-#' @param data.frame feeder_data object
+#' @param data.frame data_df object
 #' @return data.frame containing daily statistics data
 
 calc_daily_stats <- function(data_df) {
@@ -235,6 +235,7 @@ calc_daily_stats <- function(data_df) {
 			sd=sd(., na.rm=TRUE)
 			)
 		)
+	daily_stats$time_and_date <- floor_date(daily_stats$time_and_date_min, unit="day")
 	# daily_stats <- clean_stats(daily_stats)
 	
 	return(daily_stats)
@@ -243,7 +244,7 @@ calc_daily_stats <- function(data_df) {
 #' Calculate hourly statistics
 #' 
 #' Instead of a separate query, calculate the statistics inside R using dplyr and lubridate
-#' @param data.frame feeder_data object
+#' @param data.frame data_df object
 #' @return data.frame containing hourly statistics data
 
 calc_hourly_stats <- function(data_df) {
@@ -257,6 +258,7 @@ calc_hourly_stats <- function(data_df) {
 			sd=sd(., na.rm=TRUE)
 			)
 		)
+	hourly_stats$time_and_date <- floor_date(hourly_stats$time_and_date_min, unit="hour")
 	hourly_stats$hour_fac <- as.factor(hour(hourly_stats$hour))
 	
 	# hourly_stats <- clean_stats(hourly_stats)
@@ -266,40 +268,40 @@ calc_hourly_stats <- function(data_df) {
 #' Clean hourly_stats names and columns
 #' 
 #' Throw out junk variables and give more sensible names
-#' @param data.frame statsDF object
+#' @param data.frame stats_df object
 #' @return data.frame cleaned stats
 
-clean_stats <- function(statsDF) {
+clean_stats <- function(stats_df) {
   # drop_h <- c("time_and_date_max", "min_of_day_max", "hour_of_day_max", "problem_phase_max", "DateTime_max", "feeder_id_mean", "time_and_date_mean", "phase_id_mean", "id1_mean", "id2_mean", "id3_mean", "min_of_day_mean", "hour_of_day_mean", "day_of_week_mean", "DateTime_mean", "feeder_id_min", "phase_id_min", "id1_min", "id2_min", "id3_min", "min_of_day_min", "day_of_week_min", "problem_phase_min", "feeder_id_sd", "time_and_date_sd", "phase_id_sd", "id1_sd", "id2_sd", "id3_sd", "hour_of_day_sd", "day_of_week_sd", "problem_phase_sd", "DateTime_sd")
-  keep_h <- c("hour", "current_max", "real_power_max", "current_thd_max", "power_factor_max", "disp_power_factor_max", "true_power_factor_max", "voltage_max", "voltage_thd_max", "temperature_max", "frequency_max", "v1_max", "v2_max", "v3_max", "app_power_max", "app_power_t_max", "reac_power_max", "reac_power_t_max", "imbalance_max", "current_mean", "real_power_mean", "current_thd_mean", "power_factor_mean", "disp_power_factor_mean", "true_power_factor_mean", "voltage_mean", "voltage_thd_mean", "temperature_mean", "frequency_mean", "v1_mean", "v2_mean", "v3_mean", "app_power_mean", "app_power_t_mean", "reac_power_mean", "reac_power_t_mean", "imbalance_mean", "problem_phase_mean", "current_min", "real_power_min", "current_thd_min", "power_factor_min", "disp_power_factor_min", "true_power_factor_min", "voltage_min", "voltage_thd_min", "temperature_min", "frequency_min", "v1_min", "v2_min", "v3_min", "app_power_min", "app_power_t_min", "reac_power_min", "reac_power_t_min", "imbalance_min", "current_sd", "real_power_sd", "current_thd_sd", "power_factor_sd", "disp_power_factor_sd", "true_power_factor_sd", "voltage_sd", "voltage_thd_sd", "temperature_sd", "frequency_sd", "v1_sd", "v2_sd", "v3_sd", "app_power_sd", "app_power_t_sd", "reac_power_sd", "reac_power_t_sd", "min_of_day_sd", "imbalance_sd", "hour_fac")
-  old_h <- c("feeder_id_max", "phase_id_max", "id1_max", "id2_max", "id3_max", "day_of_week_max", "time_and_date_min", "hour_of_day_min", "DateTime_min")
-  new_h <- c("feeder_id", "phase_id", "id1", "id2", "id3", "day_of_week", "time_and_date", "hour_of_day", "DateTime")
+  keep_h <- c("hour", "time_and_date", "current_max", "real_power_max", "current_thd_max", "power_factor_max", "disp_power_factor_max", "true_power_factor_max", "voltage_max", "voltage_thd_max", "temperature_max", "frequency_max", "v1_max", "v2_max", "v3_max", "app_power_max", "app_power_t_max", "reac_power_max", "reac_power_t_max", "imbalance_max", "current_mean", "real_power_mean", "current_thd_mean", "power_factor_mean", "disp_power_factor_mean", "true_power_factor_mean", "voltage_mean", "voltage_thd_mean", "temperature_mean", "frequency_mean", "v1_mean", "v2_mean", "v3_mean", "app_power_mean", "app_power_t_mean", "reac_power_mean", "reac_power_t_mean", "imbalance_mean", "problem_phase_mean", "current_min", "real_power_min", "current_thd_min", "power_factor_min", "disp_power_factor_min", "true_power_factor_min", "voltage_min", "voltage_thd_min", "temperature_min", "frequency_min", "v1_min", "v2_min", "v3_min", "app_power_min", "app_power_t_min", "reac_power_min", "reac_power_t_min", "imbalance_min", "current_sd", "real_power_sd", "current_thd_sd", "power_factor_sd", "disp_power_factor_sd", "true_power_factor_sd", "voltage_sd", "voltage_thd_sd", "temperature_sd", "frequency_sd", "v1_sd", "v2_sd", "v3_sd", "app_power_sd", "app_power_t_sd", "reac_power_sd", "reac_power_t_sd", "min_of_day_sd", "imbalance_sd", "hour_fac")
+  old_h <- c("feeder_id_max", "phase_id_max", "id1_max", "id2_max", "id3_max", "day_of_week_max", "hour_of_day_min", "DateTime_min")
+  new_h <- c("feeder_id", "phase_id", "id1", "id2", "id3", "day_of_week", "hour_of_day", "DateTime")
   # drop_d <- c("min_of_day_max", "hour_of_day_max", "problem_phase_max", "feeder_id_mean", "time_and_date_mean", "phase_id_mean", "id1_mean", "id2_mean", "id3_mean", "min_of_day_mean", "hour_of_day_mean", "day_of_week_mean", "DateTime_mean", "feeder_id_min", "time_and_date_min", "phase_id_min", "id1_min", "id2_min", "id3_min", "min_of_day_min", "hour_of_day_min", "day_of_week_min", "problem_phase_min", "DateTime_min", "feeder_id_sd", "time_and_date_sd", "phase_id_sd", "id1_sd", "id2_sd", "id3_sd", "day_of_week_sd", "DateTime_sd")
-  keep_d <- c("daily", "current_max", "real_power_max", "current_thd_max", "power_factor_max", "disp_power_factor_max", "true_power_factor_max", "voltage_max", "voltage_thd_max", "temperature_max", "frequency_max", "v1_max", "v2_max", "v3_max", "app_power_max", "app_power_t_max", "reac_power_max", "reac_power_t_max", "imbalance_max", "current_mean", "real_power_mean", "current_thd_mean", "power_factor_mean", "disp_power_factor_mean", "true_power_factor_mean", "voltage_mean", "voltage_thd_mean", "temperature_mean", "frequency_mean", "v1_mean", "v2_mean", "v3_mean", "app_power_mean", "app_power_t_mean", "reac_power_mean", "reac_power_t_mean", "imbalance_mean", "problem_phase_mean", "current_min", "real_power_min", "current_thd_min", "power_factor_min", "disp_power_factor_min", "true_power_factor_min", "voltage_min", "voltage_thd_min", "temperature_min", "frequency_min", "v1_min", "v2_min", "v3_min", "app_power_min", "app_power_t_min", "reac_power_min", "reac_power_t_min", "imbalance_min", "current_sd", "real_power_sd", "current_thd_sd", "power_factor_sd", "disp_power_factor_sd", "true_power_factor_sd", "voltage_sd", "voltage_thd_sd", "temperature_sd", "frequency_sd", "v1_sd", "v2_sd", "v3_sd", "app_power_sd", "app_power_t_sd", "reac_power_sd", "reac_power_t_sd", "min_of_day_sd", "hour_of_day_sd", "imbalance_sd", "problem_phase_sd")
-  old_d <- c("feeder_id_max", "time_and_date_max", "phase_id_max", "id1_max", "id2_max", "id3_max", "day_of_week_max", "DateTime_max")
-  new_d <- c("feeder_id", "time_and_date", "phase_id", "id1", "id2", "id3", "day_of_week", "DateTime")
+  keep_d <- c("daily", "time_and_date", "current_max", "real_power_max", "current_thd_max", "power_factor_max", "disp_power_factor_max", "true_power_factor_max", "voltage_max", "voltage_thd_max", "temperature_max", "frequency_max", "v1_max", "v2_max", "v3_max", "app_power_max", "app_power_t_max", "reac_power_max", "reac_power_t_max", "imbalance_max", "current_mean", "real_power_mean", "current_thd_mean", "power_factor_mean", "disp_power_factor_mean", "true_power_factor_mean", "voltage_mean", "voltage_thd_mean", "temperature_mean", "frequency_mean", "v1_mean", "v2_mean", "v3_mean", "app_power_mean", "app_power_t_mean", "reac_power_mean", "reac_power_t_mean", "imbalance_mean", "problem_phase_mean", "current_min", "real_power_min", "current_thd_min", "power_factor_min", "disp_power_factor_min", "true_power_factor_min", "voltage_min", "voltage_thd_min", "temperature_min", "frequency_min", "v1_min", "v2_min", "v3_min", "app_power_min", "app_power_t_min", "reac_power_min", "reac_power_t_min", "imbalance_min", "current_sd", "real_power_sd", "current_thd_sd", "power_factor_sd", "disp_power_factor_sd", "true_power_factor_sd", "voltage_sd", "voltage_thd_sd", "temperature_sd", "frequency_sd", "v1_sd", "v2_sd", "v3_sd", "app_power_sd", "app_power_t_sd", "reac_power_sd", "reac_power_t_sd", "min_of_day_sd", "hour_of_day_sd", "imbalance_sd", "problem_phase_sd")
+  old_d <- c("feeder_id_max", "phase_id_max", "id1_max", "id2_max", "id3_max", "day_of_week_max", "DateTime_max")
+  new_d <- c("feeder_id", "phase_id", "id1", "id2", "id3", "day_of_week", "DateTime")
   
-  if (colnames(statsDF)[1] == "hour") {
+  if (colnames(stats_df)[1] == "hour") {
     keep <- keep_h
     old <- old_h
     new <- new_h
-  } else if(colnames(statsDF)[1] == "daily") {
+  } else if(colnames(stats_df)[1] == "daily") {
     keep <- keep_d
     old <- old_d
     new <- new_d
   } else {
-    print("Error, colnames(statsDF)[1] not recognised")
+    print("Error, colnames(stats_df)[1] not recognised")
     print("usage: hourly_stats <- clean_stats(hourly_stats)")
     print("stats not cleaned")
-    return(statsDF)
+    return(stats_df)
   }
   
   # more sensible naming
   for (i in 1:length(old)) {
-    colnames(statsDF)[which(names(statsDF) == old[i])] <- new[i]
+    colnames(stats_df)[which(names(stats_df) == old[i])] <- new[i]
   }
   # throw out junk variables
-  statsDF <- statsDF[c(keep, new)]
+  stats_df <- stats_df[c(keep, new)]
 }
 
 #' Calculate time statistics for an arbitrary time unit
