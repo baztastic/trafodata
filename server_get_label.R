@@ -532,11 +532,11 @@ shinyServer(function(input, output, session) {
       if(input$paramX != "time_and_date") p <- p + scale_x_continuous(trans=input$xScaleType)
       if(input$paramY != "time_and_date") p <- p + scale_y_continuous(trans=input$yScaleType)
       # labels and legends
-      p <- p + xlab(labelList[[input$paramX]])
-      p <- p + ylab(labelList[[input$paramY]])
+      p <- p + xlab(get_label(input$paramX, paramList))
+      p <- p + ylab(get_label(input$paramY, paramList))
       p <- p + scale_colour_continuous(low="blue", high="red",
                                        guide = guide_colorbar(direction = "horizontal", 
-                                                              title=labelList[[input$paramCol]], 
+                                                              title=get_label(input$paramCol, paramList), 
                                                               title.position="top", 
                                                               title.hjust=0.5,
                                                               barwidth = 30)
@@ -617,11 +617,11 @@ shinyServer(function(input, output, session) {
       if(input$paramX != "time_and_date") p <- p + scale_x_continuous(trans=input$xScaleType)
       if(input$paramY != "time_and_date") p <- p + scale_y_continuous(trans=input$yScaleType)
       # labels and legends
-      p <- p + xlab(labelList[[input$paramX]])
-      p <- p + ylab(labelList[[input$paramY]])
+      p <- p + xlab(get_label(input$paramX, paramList))
+      p <- p + ylab(get_label(input$paramY, paramList))
       p <- p + scale_colour_continuous(low="blue", high="red",
                                        guide = guide_colorbar(direction = "horizontal", 
-                                                              title=labelList[[input$paramCol]], 
+                                                              title=get_label(input$paramCol, paramList), 
                                                               title.position="top", 
                                                               title.hjust=0.5,
                                                               barwidth = 30)
@@ -685,11 +685,11 @@ shinyServer(function(input, output, session) {
       p <- p + theme(legend.position = "bottom")
       if(input$paramX != "time_and_date") p <- p + scale_x_continuous(trans=input$xScaleType)
       if(input$paramY != "time_and_date") p <- p + scale_y_continuous(trans=input$yScaleType)
-      p <- p + xlab(labelList[[input$paramX]])
-      p <- p + ylab(labelList[[input$paramY]])
+      p <- p + xlab(get_label(input$paramX, paramList))
+      p <- p + ylab(get_label(input$paramY, paramList))
       p <- p + scale_colour_continuous(low="blue", high="red",
                                        guide = guide_colorbar(direction = "horizontal", 
-                                                              title=labelList[[input$paramCol]], 
+                                                              title=get_label(input$paramCol, paramList), 
                                                               title.position="top", 
                                                               title.hjust=0.5,
                                                               barwidth = 30)
@@ -721,8 +721,8 @@ shinyServer(function(input, output, session) {
         to = max(df$time_and_date)
         # color="white"
         ) %>%
-      dyAxis("y", label=labelList[[input$paramY]]) %>%
-      dyAxis("y2", label=labelList[[input$paramCol]], independentTicks = TRUE, drawGrid=FALSE) %>%
+      dyAxis("y", label=get_label(input$paramY, paramList)) %>%
+      dyAxis("y2", label=get_label(input$paramCol, paramList), independentTicks = TRUE, drawGrid=FALSE) %>%
       dySeries(
         input$paramY, 
         axis='y',
@@ -816,7 +816,7 @@ shinyServer(function(input, output, session) {
       scale_fill_continuous(low=colors[3,1], high=colors[1,2]) + 
       scale_x_date(date_breaks = "day", date_labels = "%a %d %b") +
       labs(
-        fill=paste0("Hourly Average\n", labelList[[input$paramY]]), 
+        fill=paste0("Average\n", get_label(input$paramY, paramList)), 
         x="Date", 
         y="Time") +
       theme(axis.text.x = element_text(angle = 90, hjust = 1))
@@ -833,7 +833,7 @@ shinyServer(function(input, output, session) {
     calPlot <- ggplot_calendar_heatmap(d$daily_stats, 'daily', paste0(input$paramY, '_mean')) + 
       xlab(NULL) + 
       ylab(NULL) + 
-      labs(title=paste0("Daily Average ", labelList[[input$paramY]])) +
+      labs(title=paste0("Average ", get_label(input$paramY, paramList))) +
       scale_fill_continuous(low=colors[3,1], high=colors[1,2])
 
     print(calPlot)
@@ -884,9 +884,9 @@ shinyServer(function(input, output, session) {
     wellPanel(
       style = style,
       p(HTML(paste0(
-        "<b>X: ", labelList[[input$paramX]], " = ", pointX, "<br/>",
-        "<b>Y: ", labelList[[input$paramY]], " = ", pointY, "<br/>",
-        "<b>Z: ", labelList[[input$paramCol]], " = ", pointZ, "<br/>",
+        "<b>X: ", get_label(input$paramX, paramList), " = ", pointX, "<br/>",
+        "<b>Y: ", get_label(input$paramY, paramList), " = ", pointY, "<br/>",
+        "<b>Z: ", get_label(input$paramCol, paramList), " = ", pointZ, "<br/>",
         ""
         )))
     )

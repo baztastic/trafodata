@@ -35,36 +35,6 @@ Sys.setenv(TZ="UTC")
 # extendShinyjs(text = jsCode)
 # js$disableLastPass
 
-# list of possible parameters from DB and calculated in baztools.R
-# -- moved to server.R
-# paramList <- list(
-#   "Time" = "time_and_date",
-#   "Current (A)" = "current",
-#   "Voltage (V)" = "voltage",
-#   "Voltage Imbalance (%)" = "imbalance",
-#   "Real Power (W)" = "real_power",
-#   "Reactive Power (VAr)" = "reac_power",
-#   "Apparent Power (VA)" = "app_power",
-#   "Displacement Power Factor" = "disp_power_factor",
-#   "True Power Factor" = "true_power_factor",
-#   # "Phase ID" = "phase_id",
-#   "Current THD (%)" = "current_thd",
-#   "Current THD Magnitude (A)" = "current_thd_magnitude",
-#   "Voltage THD (%)" = "voltage_thd",
-#   "Voltage THD Magnitude (V)" = "voltage_thd_magnitude",
-#   "Temperature (°C)" = "temperature",
-#   "Frequency (Hz)" = "frequency",
-#   "Reactive Power (True, VAr)" = "reac_power_t",
-#   "Apparent Power (True, VA)" = "app_power_t",
-#   "Minute of Day" = "min_of_day",
-#   "Hour of Day" = "hour_of_day",
-#   "Day of Week" = "day_of_week",
-#   "L1 Voltage (V)" = "v1",
-#   "L2 Voltage (V)" = "v2",
-#   "L3 Voltage (V)" = "v3",
-#   "Problem Phase" = "problem_phase"
-#   )
-
 # transformer feeders grouped by bundle (L1,L2,L3), neutrals omitted
 # tf1 <- c(5,1,6, 9,7,8, 11,10,12)  # tf1 dec-16 - sep17
 # tf6 <- c(33,34,35, 41,42,43, 45,46,47)  # tf6 14-jun - 25-jul
