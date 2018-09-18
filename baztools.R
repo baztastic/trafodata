@@ -69,7 +69,21 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
 #' @return list x (normalised)
 
 normalise <- function(x) {
-	return( (x-min(x))/(max(x)-min(x)) )
+  return( (x-min(x))/(max(x)-min(x)) )
+}
+
+#' Get pretty label for graphs
+#' 
+#' Find the correct label for a given parameter in paramList
+#' @param string param
+#' @param list paramList
+#' @return string label
+
+get_label <- function(param, paramList) {
+  # note "\\b" are word boundary anchors to only match the full param
+  # "\\<" and "\\>" could also be used for start and end
+  label <- names(unlist(paramList[grep(paste0("\\b", param, "\\b"), paramList)]))
+  return( label )
 }
 
 #' Time close
@@ -203,7 +217,9 @@ get_data <- function(connection, feeders_info, feeder_id=1, start_time="'2017-06
 	queryRtn['min_of_day'] <- as.integer(format(queryRtn$time_and_date, "%H"))*60 + as.integer(format(queryRtn$time_and_date, "%M"))
 	queryRtn['hour_of_day'] <- as.integer(format(queryRtn$time_and_date, "%H"))
 	queryRtn['day_of_week'] <- as.integer(format(queryRtn$time_and_date, "%u"))
-
+	queryRtn['current_thd_magnitude'] <- queryRtn$current * queryRtn$current_thd/100
+	queryRtn['voltage_thd_magnitude'] <- queryRtn$voltage * queryRtn$voltage_thd/100
+	
 	voltages <- list(queryRtn$v1, queryRtn$v2, queryRtn$v3)
 	V_mean <- unlist(lapply(data.table::transpose(voltages), mean))
 	V_delta <- list(abs(voltages[[1]]-V_mean), abs(voltages[[2]]-V_mean), abs(voltages[[3]]-V_mean))
@@ -314,7 +330,7 @@ clean_stats <- function(stats_df) {
 calc_time_stats <- function(data_df, time="hour") {
 	time_stats <- data_df %>% 
 		mutate(DateTime = time_and_date) %>% 
-		group_by(time = floor_date(time_and_date, unit=time)) %>% 
+		group_by(dt = floor_date(time_and_date, unit=time)) %>% 
 		summarise_all(funs(
 			max=max(., na.rm=TRUE),
 			mean=mean(., na.rm=TRUE),
@@ -322,9 +338,13 @@ calc_time_stats <- function(data_df, time="hour") {
 			sd=sd(., na.rm=TRUE)
 			)
 		)
+
 	if (time == "hour") {
-		time_stats$hour_fac <- as.factor(hour(time_stats$hour))
+		time_stats$hour_fac <- as.factor(hour(time_stats$dt))
 	}
+	# browser()
+	
+	time_stats$time_and_date <- time_stats$dt
 	return(time_stats)
 }
 

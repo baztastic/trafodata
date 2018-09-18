@@ -36,31 +36,34 @@ Sys.setenv(TZ="UTC")
 # js$disableLastPass
 
 # list of possible parameters from DB and calculated in baztools.R
-paramList <- list(
-  "Time" = "time_and_date",
-  "Current" = "current",
-  "Voltage" = "voltage",
-  "Voltage Imbalance" = "imbalance",
-  "Real Power" = "real_power",
-  "Reactive Power" = "reac_power",
-  "Apparent Power" = "app_power",
-  "Displacement Power Factor" = "disp_power_factor",
-  "True Power Factor" = "true_power_factor",
-  # "Phase ID" = "phase_id",
-  "Current THD" = "current_thd",
-  "Voltage THD" = "voltage_thd",
-  "Temperature" = "temperature",
-  "Frequency" = "frequency",
-  "Apparent Power (True)" = "app_power_t",
-  "Reactive Power (True)" = "reac_power_t",
-  "Minute of Day" = "min_of_day",
-  "Hour of Day" = "hour_of_day",
-  "Day of Week" = "day_of_week",
-  "L1 Voltage" = "v1",
-  "L2 Voltage" = "v2",
-  "L3 Voltage" = "v3",
-  "Problem Phase" = "problem_phase"
-  )
+# -- moved to server.R
+# paramList <- list(
+#   "Time" = "time_and_date",
+#   "Current (A)" = "current",
+#   "Voltage (V)" = "voltage",
+#   "Voltage Imbalance (%)" = "imbalance",
+#   "Real Power (W)" = "real_power",
+#   "Reactive Power (VAr)" = "reac_power",
+#   "Apparent Power (VA)" = "app_power",
+#   "Displacement Power Factor" = "disp_power_factor",
+#   "True Power Factor" = "true_power_factor",
+#   # "Phase ID" = "phase_id",
+#   "Current THD (%)" = "current_thd",
+#   "Current THD Magnitude (A)" = "current_thd_magnitude",
+#   "Voltage THD (%)" = "voltage_thd",
+#   "Voltage THD Magnitude (V)" = "voltage_thd_magnitude",
+#   "Temperature (°C)" = "temperature",
+#   "Frequency (Hz)" = "frequency",
+#   "Reactive Power (True, VAr)" = "reac_power_t",
+#   "Apparent Power (True, VA)" = "app_power_t",
+#   "Minute of Day" = "min_of_day",
+#   "Hour of Day" = "hour_of_day",
+#   "Day of Week" = "day_of_week",
+#   "L1 Voltage (V)" = "v1",
+#   "L2 Voltage (V)" = "v2",
+#   "L3 Voltage (V)" = "v3",
+#   "Problem Phase" = "problem_phase"
+#   )
 
 # transformer feeders grouped by bundle (L1,L2,L3), neutrals omitted
 # tf1 <- c(5,1,6, 9,7,8, 11,10,12)  # tf1 dec-16 - sep17
@@ -106,8 +109,6 @@ shinyUI(fluidPage(
   # Application title
   titlePanel("Electrical Analytics"
              ),
-  # shinyjs::useShinyjs(),
-  # shinyjs::extendShinyjs(text = jscode),
   actionButton("toggle", "Menu", width="90px"),
   sidebarLayout(
     # sidebar with controls
@@ -156,28 +157,26 @@ shinyUI(fluidPage(
         ),
         tags$div(style="width:100%;text-align: center;",
                  actionButton("backWeek", "<️"),
-                 # actionButton("backWeek", "⬅️"),
                  actionButton("addDayStart", "+"),
                  actionButton("subDayStart", "–"),
                  actionButton("queryBtn", "Go"),
                  actionButton("subDayEnd", "–"),
                  actionButton("addDayEnd", "+"),
                  actionButton("fwdWeek", ">")
-                 # actionButton("fwdWeek", "➡️")
         ),
         br(),
         br(),
         selectInput("paramX", "X Parameter:",
-                     paramList,
-                     selected = paramList[1]),
+                    choices=list("First select a transformer"="")
+                    ),
   
         selectInput("paramY", "Y Parameter:",
-                     paramList,
-                     selected = paramList[2]),
+                    choices=list("First select a transformer"="")
+                    ),
   
         selectInput("paramCol", "Colour Parameter:",
-                     paramList,
-                     selected = paramList[10]),
+                    choices=list("First select a transformer"="")
+                    ),
         
         switchInput("advanced", offLabel="Simple", onLabel="Advanced"),
   

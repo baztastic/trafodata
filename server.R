@@ -42,11 +42,41 @@ colors <- matrix(
   "#0C2139", "#4F90DC"),  #blue
   nrow=3, ncol=2, byrow=TRUE)
 
+# not used - defined in ui.R
 trafoSelectList<-list(
   'Please select a transformer'="",
   'Drogheda'='tf5',
   'Limerick'='tf1',
   'Oranmore'='tf6'
+  )
+
+# list of possible parameters from DB and calculated in baztools.R
+paramList <- list(
+  "Time" = "time_and_date",
+  "Current (A)" = "current",
+  "Voltage (V)" = "voltage",
+  "Voltage Imbalance (%)" = "imbalance",
+  "Real Power (W)" = "real_power",
+  "Reactive Power (VAr)" = "reac_power",
+  "Apparent Power (VA)" = "app_power",
+  "Displacement Power Factor" = "disp_power_factor",
+  "True Power Factor" = "true_power_factor",
+  # "Phase ID" = "phase_id",
+  "Current THD (%)" = "current_thd",
+  "Current THD Magnitude (A)" = "current_thd_magnitude",
+  "Voltage THD (%)" = "voltage_thd",
+  "Voltage THD Magnitude (V)" = "voltage_thd_magnitude",
+  "Temperature (°C)" = "temperature",
+  "Frequency (Hz)" = "frequency",
+  "Reactive Power (True, VAr)" = "reac_power_t",
+  "Apparent Power (True, VA)" = "app_power_t",
+  "Minute of Day" = "min_of_day",
+  "Hour of Day" = "hour_of_day",
+  "Day of Week" = "day_of_week",
+  "L1 Voltage (V)" = "v1",
+  "L2 Voltage (V)" = "v2",
+  "L3 Voltage (V)" = "v3",
+  "Problem Phase" = "problem_phase"
   )
 
 shinyServer(function(input, output, session) {
@@ -262,7 +292,7 @@ shinyServer(function(input, output, session) {
 
         # do some selection of data to remove outliers
         d$feeder_data <- d$feeder_data[which(d$feeder_data$temperature < 1000),]
-        # d$feeder_data <- d$feeder_data[which(d$feeder_data$current_thd < 64),]
+        # d$feeder_data[which(d$feeder_data$current_thd == 64),]$current_thd <- NA
 
         d$hourly_stats <- calc_hourly_stats(d$feeder_data)
         d$daily_stats <- calc_daily_stats(d$feeder_data)
@@ -359,6 +389,19 @@ shinyServer(function(input, output, session) {
       start=ymd(date_ranges[selected_trafo, "max"])-4,
       end=date_ranges[selected_trafo, "max"]
       )
+    
+    updateSelectInput(session, "paramX",
+                      choices = paramList,
+                      selected = paramList[1]
+    )
+    updateSelectInput(session, "paramY",
+                      choices = paramList,
+                      selected = paramList[2]
+    )
+    updateSelectInput(session, "paramCol",
+                      choices = paramList,
+                      selected = paramList[11]
+    )
   })
   
   # discard stored data when changing transformer/feeder
@@ -468,9 +511,6 @@ shinyServer(function(input, output, session) {
     # do some general setup on the plot (from baztools.R)
       p <- setup_plot(p, id)
     incProgress(1/6)
-    # labels and legends
-      p <- p + xlab(input$paramX)
-      p <- p + ylab(input$paramY)
 
       # TODO add a nice title
       # p <- p + ggtitle(paste(input$trafoNumber, input$feederNumber))
@@ -485,14 +525,17 @@ shinyServer(function(input, output, session) {
       p <- p + theme(legend.position = "bottom")
       if(input$paramX != "time_and_date") p <- p + scale_x_continuous(trans=input$xScaleType)
       if(input$paramY != "time_and_date") p <- p + scale_y_continuous(trans=input$yScaleType)
+      # labels and legends
+      p <- p + xlab(get_label(input$paramX, paramList))
+      p <- p + ylab(get_label(input$paramY, paramList))
       p <- p + scale_colour_continuous(low="blue", high="red",
-    guide = guide_colorbar(direction = "horizontal", 
-      title=input$paramCol, 
-      title.position="top", 
-      title.hjust=0.5,
-      barwidth = 30)
-    )
-    # print(p)  # show plot (doesn't work with hover tooltips)
+                                       guide = guide_colorbar(direction = "horizontal", 
+                                                              title=get_label(input$paramCol, paramList), 
+                                                              title.position="top", 
+                                                              title.hjust=0.5,
+                                                              barwidth = 30)
+      )
+      # print(p)  # show plot (doesn't work with hover tooltips)
     # ggMarginal(p, type = "histogram", fill="transparent")
 
     
@@ -527,6 +570,7 @@ shinyServer(function(input, output, session) {
       ydata <- eval(parse(text = paste0("d$hourly_stats$", input$paramY, "_mean")))
       coldata <- eval(parse(text = paste0("d$hourly_stats$", input$paramCol, "_mean")))
       df <- data.frame(xdata, ydata, coldata)
+      # browser()
     incProgress(1/6)
     # define plot area
       p <- ggplot(df, aes(df$x, df$y))
@@ -552,9 +596,6 @@ shinyServer(function(input, output, session) {
     # do some general setup on the plot (from baztools.R)
       p <- setup_plot(p, id)
     incProgress(1/6)
-    # labels and legends
-      p <- p + xlab(input$paramX)
-      p <- p + ylab(input$paramY)
 
       # TODO add a nice title
       # p <- p + ggtitle(paste(input$trafoNumber, input$feederNumber))
@@ -569,14 +610,17 @@ shinyServer(function(input, output, session) {
       p <- p + theme(legend.position = "bottom")
       if(input$paramX != "time_and_date") p <- p + scale_x_continuous(trans=input$xScaleType)
       if(input$paramY != "time_and_date") p <- p + scale_y_continuous(trans=input$yScaleType)
+      # labels and legends
+      p <- p + xlab(get_label(input$paramX, paramList))
+      p <- p + ylab(get_label(input$paramY, paramList))
       p <- p + scale_colour_continuous(low="blue", high="red",
-    guide = guide_colorbar(direction = "horizontal", 
-      title=input$paramCol, 
-      title.position="top", 
-      title.hjust=0.5,
-      barwidth = 30)
-    )
-    # print(p)  # show plot (doesn't work with hover tooltips)
+                                       guide = guide_colorbar(direction = "horizontal", 
+                                                              title=get_label(input$paramCol, paramList), 
+                                                              title.position="top", 
+                                                              title.hjust=0.5,
+                                                              barwidth = 30)
+      )
+      # print(p)  # show plot (doesn't work with hover tooltips)
     # ggMarginal(p, type = "histogram", fill="transparent")
     
     p
@@ -621,9 +665,6 @@ shinyServer(function(input, output, session) {
     # do some general setup on the plot (from baztools.R)
       p <- setup_plot(p, id)
     incProgress(1/6)
-    # labels and legends
-      p <- p + xlab(input$paramX)
-      p <- p + ylab(input$paramY)
 
       # TODO add a nice title
       # p <- p + ggtitle(paste(input$trafoNumber, input$feederNumber))
@@ -638,17 +679,18 @@ shinyServer(function(input, output, session) {
       p <- p + theme(legend.position = "bottom")
       if(input$paramX != "time_and_date") p <- p + scale_x_continuous(trans=input$xScaleType)
       if(input$paramY != "time_and_date") p <- p + scale_y_continuous(trans=input$yScaleType)
+      p <- p + xlab(get_label(input$paramX, paramList))
+      p <- p + ylab(get_label(input$paramY, paramList))
       p <- p + scale_colour_continuous(low="blue", high="red",
-    guide = guide_colorbar(direction = "horizontal", 
-      title=input$paramCol, 
-      title.position="top", 
-      title.hjust=0.5,
-      barwidth = 30)
-    )
-    # print(p)  # show plot (doesn't work with hover tooltips)
+                                       guide = guide_colorbar(direction = "horizontal", 
+                                                              title=get_label(input$paramCol, paramList), 
+                                                              title.position="top", 
+                                                              title.hjust=0.5,
+                                                              barwidth = 30)
+      )
+      # print(p)  # show plot (doesn't work with hover tooltips)
     # ggMarginal(p, type = "histogram", fill="transparent")
 
-    
     p
       # incProgress(1/6)
     })
@@ -673,8 +715,8 @@ shinyServer(function(input, output, session) {
         to = max(df$time_and_date)
         # color="white"
         ) %>%
-      dyAxis("y", label=input$paramY) %>%
-      dyAxis("y2", label=input$paramCol, independentTicks = TRUE, drawGrid=FALSE) %>%
+      dyAxis("y", label=get_label(input$paramY, paramList)) %>%
+      dyAxis("y2", label=get_label(input$paramCol, paramList), independentTicks = TRUE, drawGrid=FALSE) %>%
       dySeries(
         input$paramY, 
         axis='y',
