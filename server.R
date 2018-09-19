@@ -76,7 +76,8 @@ paramList <- list(
   "L1 Voltage (V)" = "v1",
   "L2 Voltage (V)" = "v2",
   "L3 Voltage (V)" = "v3",
-  "Problem Phase" = "problem_phase"
+  "Problem Phase" = "problem_phase",
+  "Energy Units (kWh)" = "kwh_cs"
   )
 
 # this is the inverse of paramList to speed up lookup
@@ -199,11 +200,11 @@ shinyServer(function(input, output, session) {
         incProgress(detail="Getting data")
 
       tryCatch({
-        # double arrows (<<-) for global variable assignment no longer needed
         if("tictoc" %in% (.packages())) {
                 tic("get_data")
               }
         d$feeders <- get_feeders(con)
+
         if(length(d$feeder_data) > 0) {
           # decide if the query is new data or a subset of data already queried
           if(length(d$stored_data) == 0){
@@ -211,10 +212,10 @@ shinyServer(function(input, output, session) {
           } else if(length(d$feeder_data$time_and_date) > length(d$stored_data$time_and_date)){
             d$stored_data <- d$feeder_data
           }
-          sd1 <- min(d$stored_data$time_and_date)
-          ed1 <- max(d$stored_data$time_and_date)
-          sd2 <- ymd_hms(start_time)
-          ed2 <- ymd_hms(end_time)
+          sd1 <- min(d$stored_data$time_and_date)  # old
+          ed1 <- max(d$stored_data$time_and_date)  # old
+          sd2 <- ymd_hms(start_time)               # new
+          ed2 <- ymd_hms(end_time)                 # new
           
           if(timeClose(sd2, sd1) && timeClose(ed2, ed1)){
             # no need to do new query, just return previous results
@@ -238,7 +239,7 @@ shinyServer(function(input, output, session) {
             # merge new query with previous results
             # return subset between sd2 and ed2
             # print("leftside")
-            new_data <- get_data(con, d$feeders, as.integer(input$feederNumber), format(sd2, "'%Y-%m-%d %H:%M:%S'"), format(sd1, "'%Y-%m-%d %H:%M:%S'"))
+            new_data <- get_data(con, d$feeders, as.integer(input$feederNumber), format(sd2, "'%Y-%m-%d %H:%M:%S'"), format(sd1-seconds(1), "'%Y-%m-%d %H:%M:%S'"))
             d$stored_data <- rbind(new_data, d$stored_data)
             return_data <- d$stored_data[which(
               ymd_hms(d$stored_data$time_and_date) >= sd2 & 
@@ -248,7 +249,7 @@ shinyServer(function(input, output, session) {
             # merge new query with previous results
             # return subset between sd2 and ed2
             # print("rightside")
-            new_data <- get_data(con, d$feeders, as.integer(input$feederNumber), format(ed1, "'%Y-%m-%d %H:%M:%S'"), format(ed2, "'%Y-%m-%d %H:%M:%S'"))
+            new_data <- get_data(con, d$feeders, as.integer(input$feederNumber), format(ed1+seconds(1), "'%Y-%m-%d %H:%M:%S'"), format(ed2, "'%Y-%m-%d %H:%M:%S'"))
             d$stored_data <- rbind(d$stored_data, new_data)
             return_data <- d$stored_data[which(
               ymd_hms(d$stored_data$time_and_date) >= sd2 & 
@@ -258,8 +259,8 @@ shinyServer(function(input, output, session) {
             # merge new query with previous results
             # return subset between sd2 and ed2
             # print("outside")
-            left_data <- get_data(con, d$feeders, as.integer(input$feederNumber), format(sd2, "'%Y-%m-%d %H:%M:%S'"), format(sd1, "'%Y-%m-%d %H:%M:%S'"))
-            right_data <- get_data(con, d$feeders, as.integer(input$feederNumber), format(ed1, "'%Y-%m-%d %H:%M:%S'"), format(ed2, "'%Y-%m-%d %H:%M:%S'"))
+            left_data <- get_data(con, d$feeders, as.integer(input$feederNumber), format(sd2, "'%Y-%m-%d %H:%M:%S'"), format(sd1-seconds(1), "'%Y-%m-%d %H:%M:%S'"))
+            right_data <- get_data(con, d$feeders, as.integer(input$feederNumber), format(ed1+seconds(1), "'%Y-%m-%d %H:%M:%S'"), format(ed2, "'%Y-%m-%d %H:%M:%S'"))
             d$stored_data <- rbind(left_data, d$stored_data, right_data)
             return_data <- d$stored_data[which(
               ymd_hms(d$stored_data$time_and_date) >= sd2 & 
@@ -283,8 +284,7 @@ shinyServer(function(input, output, session) {
         }else{
           d$feeder_data <- get_data(con, d$feeders, as.integer(input$feederNumber), start_time, end_time)
         }
-        
-        
+
         
         if("tictoc" %in% (.packages())) {
                 timer <- toc()
@@ -302,7 +302,9 @@ shinyServer(function(input, output, session) {
 
         d$hourly_stats <- calc_hourly_stats(d$feeder_data)
         d$daily_stats <- calc_daily_stats(d$feeder_data)
-        },
+        # d$hourly_stats <- calc_time_stats(d$feeder_data, 'hour')
+        # d$daily_stats <- calc_time_stats(d$feeder_data, 'day')
+      },
         error=function(cond){
           print(cond)
           return()
@@ -711,7 +713,7 @@ shinyServer(function(input, output, session) {
     df <- d$feeder_data
     df <- unique(df)
     q <- data.frame(eval(parse(text = paste0("df$", input$paramY))), eval(parse(text = paste0("df$", input$paramCol))))
-    
+    # browser()
     rownames(q) <- df$time_and_date
     colnames(q) <- c(input$paramY, input$paramCol)
     dygraph(q) %>% 
@@ -816,7 +818,7 @@ shinyServer(function(input, output, session) {
       scale_fill_continuous(low=colors[3,1], high=colors[1,2]) + 
       scale_x_date(date_breaks = "day", date_labels = "%a %d %b") +
       labs(
-        fill=paste0("Hourly Average\n", labelList[[input$paramY]]), 
+        fill=paste0("Hourly\n", labelList[[input$paramY]]), 
         x="Date", 
         y="Time") +
       theme(axis.text.x = element_text(angle = 90, hjust = 1))
@@ -833,7 +835,7 @@ shinyServer(function(input, output, session) {
     calPlot <- ggplot_calendar_heatmap(d$daily_stats, 'daily', paste0(input$paramY, '_mean')) + 
       xlab(NULL) + 
       ylab(NULL) + 
-      labs(title=paste0("Daily Average ", labelList[[input$paramY]])) +
+      labs(title=paste0("Daily ", labelList[[input$paramY]])) +
       scale_fill_continuous(low=colors[3,1], high=colors[1,2])
 
     print(calPlot)
