@@ -10,7 +10,7 @@ require("lubridate")
 require("dplyr")
 
 #' Multiple plot function
-#' 
+#'
 #' ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
 #' @param ggplot plots or plotlist
 #' @param int cols=Number of columns in layout
@@ -63,7 +63,7 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
 }
 
 #' Normalise a list
-#' 
+#'
 #' Remap a list of values from 0 - 1
 #' @param list x
 #' @return list x (normalised)
@@ -73,7 +73,7 @@ normalise <- function(x) {
 }
 
 #' Time close
-#' 
+#'
 #' Check if two times are "close" together, within thresh minutes
 #' @param datetime time1
 #' @param datetime time2
@@ -90,7 +90,7 @@ timeClose <- function(time1, time2, thresh=5) {
 
 
 #' Start SQL
-#' 
+#'
 #' Open a connection to the TRANSGLOBAL transformer DB
 #' @param character db='local' for tunneled connection, anything else for direct connection
 #' @return connection object
@@ -98,9 +98,9 @@ timeClose <- function(time1, time2, thresh=5) {
 start_sql <- function(db='local') {
 	# open connection
 	drv <- dbDriver("PostgreSQL")
-	pw <- "O$V*&Iw7dfp03x"
+	pw <- ""
 	if(db == 'local') {
-		connection <- dbConnect(drv, dbname = "transformer_db", host = "localhost", port = 9000, user = "barry_read", password = pw)
+		connection <- dbConnect(drv, dbname = "array_test_db", host = "localhost", port = 5432, user = "gsmserver", password = pw)
 	}
 	else {
 		connection <- dbConnect(drv, dbname = "transformer_db", host = "transglobal.cloud.tilaa.com", port = 5432, user = "barry_read", password = pw)
@@ -111,28 +111,29 @@ start_sql <- function(db='local') {
 }
 
 #' Get Feeders
-#' 
+#'
 #' Get a list of feeders from the database, with phase and transformer information
 #' @param connection sql connection object
 #' @return data.frame of feeders
 
 get_feeders <- function(connection) {
-	feeders_query <- paste("SELECT", 
-				"feeders.id AS id,", 
-				"feeders.phase_id AS phase,", 
-				"feeders.num AS num,", 
-				"feeders.polarity AS polarity,", 
+	feeders_query <- paste("SELECT",
+				"feeders.id AS id,",
+				"phases.id AS phase,",
+				"feeders.num AS num,",
+				"feeders.polarity AS polarity,",
 				"phases.phase_type AS phase_type,",
-				"phases.transformer_id AS transformer", 
+				"phases.transformer_id AS transformer",
 				"FROM feeders",
-				"JOIN phases ON phases.id = feeders.phase_id",
+				"JOIN phases ON phases.transformer_id = feeders.transformer_id",
+				"AND phases.phase_type = feeders.phase_type",
 				"ORDER BY feeders.id;", sep=" ")
 
 	return(dbGetQuery(connection, feeders_query))
 }
 
 #' Get Data
-#' 
+#'
 #' Get data from database on specific feeder. Joins feeder_stats, phase_stats, and transformer_stats on date_and_time
 #' @param connection SQL connection object
 #' @param data_frame List of feeders from get_feeders()
@@ -148,7 +149,7 @@ get_data <- function(connection, feeders_info, feeder_id=1, start_time="'2017-06
 	# 	return(NULL)
 	# }
 	# feeders_info <- get_feeders(connection)
-	
+
 	trafo_id <- feeders_info$transformer[feeder_id]
 	trafo_feeders <- feeders_info[which(feeders_info$transformer == trafo_id),]
 	# think about grabbing all feeders for a particular trafo?
@@ -158,25 +159,25 @@ get_data <- function(connection, feeders_info, feeder_id=1, start_time="'2017-06
 	phase_ids <- sort(phase_ids)
 
 	queryStr <- paste("SELECT",
-					"feeder_stats.feeder_id AS feeder_id,", 
-					"feeder_stats.time_and_date AS time_and_date,", 
-					"feeder_stats.current AS current,", 
-					"feeder_stats.real_power AS real_power,", 
-					"feeder_stats.thd AS current_thd,", 
-					"feeder_stats.power_factor AS power_factor,", 
-					"feeder_stats.power_factor AS disp_power_factor,",  
+					"feeder_stats.feeder_id AS feeder_id,",
+					"feeder_stats.time_and_date AS time_and_date,",
+					"feeder_stats.current_instant AS current,",
+					"feeder_stats.real_power AS real_power,",
+					"feeder_stats.thd AS current_thd,",
+					"feeder_stats.power_factor AS power_factor,",
+					"feeder_stats.power_factor AS disp_power_factor,",
 					"feeder_stats.power_factor/SQRT(1+feeder_stats.thd*feeder_stats.thd/10000) AS true_power_factor,",
-					"phase_stats.phase_id AS phase_id,", 
-					"phase_stats.voltage AS voltage,", 
+					"phase_stats.phase_id AS phase_id,",
+					"phase_stats.voltage_instant AS voltage,",
 					"phase_stats.thd AS voltage_thd,",
 					"transformer_stats.temperature AS temperature,",
 					"transformer_stats.frequency AS frequency,",
-					"p1.phase_id AS id1,", 
-					"p1.voltage AS v1,", 
-					"p2.phase_id AS id2,", 
-					"p2.voltage AS v2,", 
-					"p3.phase_id AS id3,", 
-					"p3.voltage AS v3",
+					"p1.phase_id AS id1,",
+					"p1.voltage_instant AS v1,",
+					"p2.phase_id AS id2,",
+					"p2.voltage_instant AS v2,",
+					"p3.phase_id AS id3,",
+					"p3.voltage_instant AS v3",
 					"FROM feeder_stats",
 					"JOIN phase_stats ON phase_stats.time_and_date = feeder_stats.time_and_date",
 					"JOIN transformer_stats ON transformer_stats.time_and_date = feeder_stats.time_and_date",
@@ -211,7 +212,7 @@ get_data <- function(connection, feeders_info, feeder_id=1, start_time="'2017-06
 	imbalance <- 100 * (V_max) / V_mean
 	problem_phase <- cbind(V_delta[[1]] == V_max, V_delta[[2]] == V_max, V_delta[[3]] == V_max)
 	problem_phase <- (problem_phase %*% phase_ids)
-	problem_phase[!(problem_phase %in% phase_ids)] <- NA # if more than one phase is a problem, discard that point	
+	problem_phase[!(problem_phase %in% phase_ids)] <- NA # if more than one phase is a problem, discard that point
 	queryRtn <- cbind(queryRtn, imbalance, problem_phase)
 
 	print("Finished query!")
@@ -219,15 +220,15 @@ get_data <- function(connection, feeders_info, feeder_id=1, start_time="'2017-06
 }
 
 #' Calculate daily statistics
-#' 
+#'
 #' Instead of a separate query, calculate the statistics inside R using dplyr and lubridate
 #' @param data.frame data_df object
 #' @return data.frame containing daily statistics data
 
 calc_daily_stats <- function(data_df) {
-	daily_stats <- data_df %>% 
-		mutate(DateTime = time_and_date) %>% 
-		group_by(daily = as.Date(as_date(time_and_date))) %>% 
+	daily_stats <- data_df %>%
+		mutate(DateTime = time_and_date) %>%
+		group_by(daily = as.Date(as_date(time_and_date))) %>%
 		summarise_all(funs(
 			max=max(., na.rm=TRUE),
 			mean=mean(., na.rm=TRUE),
@@ -237,20 +238,20 @@ calc_daily_stats <- function(data_df) {
 		)
 	daily_stats$time_and_date <- floor_date(daily_stats$time_and_date_min, unit="day")
 	# daily_stats <- clean_stats(daily_stats)
-	
+
 	return(daily_stats)
 }
 
 #' Calculate hourly statistics
-#' 
+#'
 #' Instead of a separate query, calculate the statistics inside R using dplyr and lubridate
 #' @param data.frame data_df object
 #' @return data.frame containing hourly statistics data
 
 calc_hourly_stats <- function(data_df) {
-	hourly_stats <- data_df %>% 
-		mutate(DateTime = time_and_date) %>% 
-		group_by(hour = floor_date(time_and_date, unit="hour")) %>% 
+	hourly_stats <- data_df %>%
+		mutate(DateTime = time_and_date) %>%
+		group_by(hour = floor_date(time_and_date, unit="hour")) %>%
 		summarise_all(funs(
 			max=max(., na.rm=TRUE),
 			mean=mean(., na.rm=TRUE),
@@ -260,13 +261,13 @@ calc_hourly_stats <- function(data_df) {
 		)
 	hourly_stats$time_and_date <- floor_date(hourly_stats$time_and_date_min, unit="hour")
 	hourly_stats$hour_fac <- as.factor(hour(hourly_stats$hour))
-	
+
 	# hourly_stats <- clean_stats(hourly_stats)
 	return(hourly_stats)
 }
 
 #' Clean hourly_stats names and columns
-#' 
+#'
 #' Throw out junk variables and give more sensible names
 #' @param data.frame stats_df object
 #' @return data.frame cleaned stats
@@ -280,7 +281,7 @@ clean_stats <- function(stats_df) {
   keep_d <- c("daily", "time_and_date", "current_max", "real_power_max", "current_thd_max", "power_factor_max", "disp_power_factor_max", "true_power_factor_max", "voltage_max", "voltage_thd_max", "temperature_max", "frequency_max", "v1_max", "v2_max", "v3_max", "app_power_max", "app_power_t_max", "reac_power_max", "reac_power_t_max", "imbalance_max", "current_mean", "real_power_mean", "current_thd_mean", "power_factor_mean", "disp_power_factor_mean", "true_power_factor_mean", "voltage_mean", "voltage_thd_mean", "temperature_mean", "frequency_mean", "v1_mean", "v2_mean", "v3_mean", "app_power_mean", "app_power_t_mean", "reac_power_mean", "reac_power_t_mean", "imbalance_mean", "problem_phase_mean", "current_min", "real_power_min", "current_thd_min", "power_factor_min", "disp_power_factor_min", "true_power_factor_min", "voltage_min", "voltage_thd_min", "temperature_min", "frequency_min", "v1_min", "v2_min", "v3_min", "app_power_min", "app_power_t_min", "reac_power_min", "reac_power_t_min", "imbalance_min", "current_sd", "real_power_sd", "current_thd_sd", "power_factor_sd", "disp_power_factor_sd", "true_power_factor_sd", "voltage_sd", "voltage_thd_sd", "temperature_sd", "frequency_sd", "v1_sd", "v2_sd", "v3_sd", "app_power_sd", "app_power_t_sd", "reac_power_sd", "reac_power_t_sd", "min_of_day_sd", "hour_of_day_sd", "imbalance_sd", "problem_phase_sd")
   old_d <- c("feeder_id_max", "phase_id_max", "id1_max", "id2_max", "id3_max", "day_of_week_max", "DateTime_max")
   new_d <- c("feeder_id", "phase_id", "id1", "id2", "id3", "day_of_week", "DateTime")
-  
+
   if (colnames(stats_df)[1] == "hour") {
     keep <- keep_h
     old <- old_h
@@ -295,7 +296,7 @@ clean_stats <- function(stats_df) {
     print("stats not cleaned")
     return(stats_df)
   }
-  
+
   # more sensible naming
   for (i in 1:length(old)) {
     colnames(stats_df)[which(names(stats_df) == old[i])] <- new[i]
@@ -305,16 +306,16 @@ clean_stats <- function(stats_df) {
 }
 
 #' Calculate time statistics for an arbitrary time unit
-#' 
+#'
 #' Instead of a separate query, calculate the statistics inside R using dplyr and lubridate
 #' @param data.frame feeder_data object
 #' @param time string time unit e.g. "hour", "15 min"
 #' @return data.frame containing time statistics data
 
 calc_time_stats <- function(data_df, time="hour") {
-	time_stats <- data_df %>% 
-		mutate(DateTime = time_and_date) %>% 
-		group_by(time = floor_date(time_and_date, unit=time)) %>% 
+	time_stats <- data_df %>%
+		mutate(DateTime = time_and_date) %>%
+		group_by(time = floor_date(time_and_date, unit=time)) %>%
 		summarise_all(funs(
 			max=max(., na.rm=TRUE),
 			mean=mean(., na.rm=TRUE),
@@ -329,7 +330,7 @@ calc_time_stats <- function(data_df, time="hour") {
 }
 
 #' Statistics by date
-#' 
+#'
 #' Query the database for summary data ordered by date. Min, average, max, standard deviation calculated by SQL
 #' @param connection SQL connection object
 #' @param character SQL parameter to summarize
@@ -342,11 +343,11 @@ get_date_stats <- function(connection, param="real_power", id=1, start_date=ymd(
 	sd <- paste0("'", start_date, "'")
 	ed <- paste0("'", end_date, "'")
 	params <- list(
-		"current" = "feeder", 
-		"real_power" = "feeder", 
-		"feeder_stats.thd" = "feeder", 
-		"power_factor" = "feeder", 
-		"voltage" = "phase", 
+		"current" = "feeder",
+		"real_power" = "feeder",
+		"feeder_stats.thd" = "feeder",
+		"power_factor" = "feeder",
+		"voltage" = "phase",
 		"phase_stats.thd" = "phase",
 		"temperature" = "transformer",
 		"frequency" = "transformer"
@@ -359,7 +360,7 @@ get_date_stats <- function(connection, param="real_power", id=1, start_date=ymd(
 	id_type <- paste0(id_str, "_id")
 
 	queryStr <- paste("SELECT",
-		"CAST(time_and_date as date) AS dt, ", 
+		"CAST(time_and_date as date) AS dt, ",
 		"MIN(", param, ") AS min,",
 		"AVG(", param, ") AS avg,",
 		"MAX(", param, ") AS max,",
@@ -380,7 +381,7 @@ get_date_stats <- function(connection, param="real_power", id=1, start_date=ymd(
 }
 
 #' Hourly statistics
-#' 
+#'
 #' Query the database for summary data ordered by hour. Min, average, max, standard deviation calculated by SQL
 #' @param connection SQL connection object
 #' @param character SQL parameter to summarize
@@ -393,11 +394,11 @@ get_hourly_stats <- function(connection, param="real_power", id=1, start_date=ym
 	sd <- paste0("'", start_date, " 00:00:00'")
 	ed <- paste0("'", end_date, " 00:00:00'")
 	params <- list(
-		"current" = "feeder", 
-		"real_power" = "feeder", 
-		"feeder_stats.thd" = "feeder", 
-		"power_factor" = "feeder", 
-		"voltage" = "phase", 
+		"current" = "feeder",
+		"real_power" = "feeder",
+		"feeder_stats.thd" = "feeder",
+		"power_factor" = "feeder",
+		"voltage" = "phase",
 		"phase_stats.thd" = "phase",
 		"temperature" = "transformer",
 		"frequency" = "transformer"
@@ -433,7 +434,7 @@ get_hourly_stats <- function(connection, param="real_power", id=1, start_date=ym
 }
 
 #' Hourly power statistics
-#' 
+#'
 #' Query the database for summary data ordered by hour. Min, average, max, standard deviation calculated by SQL
 #' @param connection SQL connection object
 #' @param character SQL parameter to summarize
@@ -480,7 +481,7 @@ get_hourly_power_stats <- function(connection, param="real_power", id=1, start_d
 	if(discard_negatives) {
 		queryRtn$minreal <- abs(queryRtn$minreal)
 		queryRtn$avgreal <- abs(queryRtn$avgreal)
-		queryRtn$maxreal <- abs(queryRtn$maxreal)	
+		queryRtn$maxreal <- abs(queryRtn$maxreal)
 	}
 	queryRtn$minapp <- queryRtn$minreal/queryRtn$minpf
 	queryRtn$avgapp <- queryRtn$avgreal/queryRtn$avgpf
@@ -493,7 +494,7 @@ get_hourly_power_stats <- function(connection, param="real_power", id=1, start_d
 }
 
 #' Get voltage imbalance
-#' 
+#'
 #' Get voltage imbalance for a specific trafo - needs input from all phases on that trafo
 #' @param connection SQL connection object
 #' @param int Feeder id - get the trafo from feeders_info
@@ -514,12 +515,12 @@ get_voltage_imbalance <- function(connection, feeder_id=1, start_time="'2017-06-
 	phase_ids <- unique(trafo_feeders$phase[which(trafo_feeders$phase_type != 0)])
 	phase_ids <- sort(phase_ids)
 	queryStr <- paste("SELECT",
-					"p1.time_and_date AS time_and_date,", 
-					"p1.phase_id AS id1,", 
-					"p1.voltage AS v1,", 
-					"p2.phase_id AS id2,", 
-					"p2.voltage AS v2,", 
-					"p3.phase_id AS id3,", 
+					"p1.time_and_date AS time_and_date,",
+					"p1.phase_id AS id1,",
+					"p1.voltage AS v1,",
+					"p2.phase_id AS id2,",
+					"p2.voltage AS v2,",
+					"p3.phase_id AS id3,",
 					"p3.voltage AS v3",
 					"FROM phase_stats AS p1",
 					"JOIN phase_stats AS p2 ON p2.time_and_date = p1.time_and_date",
@@ -544,14 +545,14 @@ get_voltage_imbalance <- function(connection, feeder_id=1, start_time="'2017-06-
 	problem_phase <- cbind(V_delta[[1]] == V_max, V_delta[[2]] == V_max, V_delta[[3]] == V_max)
 	problem_phase <- (problem_phase %*% phase_ids)
 	problem_phase[!(problem_phase %in% phase_ids)] <- NA # if more than one phase is a problem, discard that point
-	
+
 	queryRtn <- cbind(queryRtn, imbalance, problem_phase)
 	print("Finished imbalance query!")
 	return(queryRtn)
 }
 
 #' Calculate power
-#' 
+#'
 #' Calculate reactive and apparent power from real power and power factor
 #' @param data.frame Feeder data with real_power and power_factor cols
 #' @param bool discard_negatives If TRUE, take absolute value of real_power
@@ -572,7 +573,7 @@ calc_power <- function(df, discard_negatives=TRUE) {
 }
 
 #' Default origin for POSIXlt dates
-#' 
+#'
 #' hack for correct colour date labels
 #' @param x POSIXlt date as integer
 
@@ -582,7 +583,7 @@ as.POSIXlt_origin <- function(x){
 }
 
 #' Plot 1
-#' 
+#'
 #' power factor vs real power
 #' @param int Feeder id
 #' @param data.frame Containing feeder data
@@ -592,11 +593,11 @@ plot_1 <- function(feeder_id, df) {
 	# power factor vs real power
 	p <- ggplot(df,
 		aes(
-			df$real_power/1000.0, 
+			df$real_power/1000.0,
 			df$power_factor,
 			colour=df$min_of_day
 			)
-		) + 
+		) +
 		geom_point(alpha = 0.5) +
 		scale_colour_gradientn(colours=c('red', 'green', 'blue'))
 	p <- setup_plot(p, feeder_id)
@@ -604,7 +605,7 @@ plot_1 <- function(feeder_id, df) {
 }
 
 #' Plot 2
-#' 
+#'
 #' current vs time
 #' @param int Feeder id
 #' @param data.frame Containing feeder data
@@ -614,11 +615,11 @@ plot_2 <- function(feeder_id, df) {
 	# current vs time
 	p <- ggplot(df,
 		aes(
-			df$time_and_date, 
+			df$time_and_date,
 			df$current,
 			colour=df$power_factor
 			)
-		) + 
+		) +
 		geom_point(alpha = 0.5) +
 		scale_colour_gradientn(colours=c('red', 'green', 'blue'))
 	p <- setup_plot(p, feeder_id, smooth=TRUE)
@@ -626,7 +627,7 @@ plot_2 <- function(feeder_id, df) {
 }
 
 #' Plot 3
-#' 
+#'
 #' voltage vs time
 #' @param int Feeder id
 #' @param data.frame Containing feeder data
@@ -636,11 +637,11 @@ plot_3 <- function(feeder_id, df) {
 	# voltage vs time
 	p <- ggplot(df,
 		aes(
-			df$time_and_date, 
+			df$time_and_date,
 			df$voltage,
 			colour=df$power_factor
 			)
-		) + 
+		) +
 		geom_point(alpha = 0.5) +
 		scale_colour_gradientn(colours=c('red', 'green', 'blue'))
 	p <- setup_plot(p, feeder_id, smooth=TRUE)
@@ -648,7 +649,7 @@ plot_3 <- function(feeder_id, df) {
 }
 
 #' Plot 4
-#' 
+#'
 #' voltage vs current
 #' @param int Feeder id
 #' @param data.frame Containing feeder data
@@ -658,11 +659,11 @@ plot_4 <- function(feeder_id, df) {
 	# voltage vs current
 	p <- ggplot(df,
 		aes(
-			df$current, 
+			df$current,
 			df$voltage,
 			colour=df$power_factor
 			)
-		) + 
+		) +
 		geom_point(alpha = 0.5) +
 		scale_colour_gradientn(colours=c('red', 'green', 'blue'))
 	p <- setup_plot(p, feeder_id, smooth=FALSE)
@@ -670,7 +671,7 @@ plot_4 <- function(feeder_id, df) {
 }
 
 #' Plot 5
-#' 
+#'
 #' voltage_thd vs current_thd
 #' @param int Feeder id
 #' @param data.frame Containing feeder data
@@ -680,11 +681,11 @@ plot_5 <- function(feeder_id, df) {
 	# voltage_thd vs current_thd
 	p <- ggplot(df,
 		aes(
-			df$current_thd, 
+			df$current_thd,
 			df$voltage_thd,
 			colour=df$power_factor
 			)
-		) + 
+		) +
 		geom_point(alpha = 0.5) +
 		scale_colour_gradientn(colours=c('red', 'green', 'blue'))
 	if (max(df$current_thd) == 64) p <- p + xlim(0, 63.9)
@@ -694,7 +695,7 @@ plot_5 <- function(feeder_id, df) {
 }
 
 #' Plot 6
-#' 
+#'
 #' current histogram
 #' @param int Feeder id
 #' @param data.frame Containing feeder data
@@ -708,7 +709,7 @@ plot_6 <- function(feeder_id, df) {
 			y=..ncount..*100 -> ncount,
 			fill=..density..
 			)
-		) + 
+		) +
 		stat_bin(bins=20) +
 		scale_x_continuous(breaks = scales::pretty_breaks(n=10))
 	p <- setup_plot(p, feeder_id, smooth=FALSE)
@@ -716,7 +717,7 @@ plot_6 <- function(feeder_id, df) {
 }
 
 #' Plot 7
-#' 
+#'
 #' real & reactive power vs time
 #' @param int Feeder id
 #' @param data.frame Containing feeder data
@@ -737,7 +738,7 @@ plot_7 <- function(feeder_id, df) {
 }
 
 #' Setup plot
-#' 
+#'
 #' Common formatting applied to all plots
 #' @param ggplot plot object
 #' @param int feeder id
@@ -757,7 +758,7 @@ setup_plot <- function(p, feeder_id, smooth=FALSE){
 }
 
 #' Plot choose
-#' 
+#'
 #' Choose which plot to output. Applies specific labels, limits, etc. for each plot type. Also does some common setup.
 #' @param int feeder id
 #' @param int plot type
@@ -813,7 +814,7 @@ plot_choose <- function(feeder_id, type=1, df) {
 		"Feeder ", feeders$id[feeder_id], " ",
 		"Phase ", feeders$phase_type[feeder_id], " ",
 		"Transformer ", feeders$transformer[feeder_id], "\n",
-		"Load factor = ", round(load_factor, 1),'%', sep=""), 
+		"Load factor = ", round(load_factor, 1),'%', sep=""),
 		subtitle=paste(format(d_start, "%d/%m/%y %H:%M"), "\u2013", format(d_end, "%d/%m/%y %H:%M"), sep=" ")
 		)
 

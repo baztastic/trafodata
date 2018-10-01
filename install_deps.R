@@ -13,7 +13,8 @@ list.of.packages <- c(
 	"shinyWidgets",
 	"tictoc",
 	"dygraphs",
-	"shinyjs"
+	"shinyjs",
+	"ggExtra"
 	)
 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
