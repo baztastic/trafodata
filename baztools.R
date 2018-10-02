@@ -69,7 +69,21 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
 #' @return list x (normalised)
 
 normalise <- function(x) {
-	return( (x-min(x))/(max(x)-min(x)) )
+  return( (x-min(x))/(max(x)-min(x)) )
+}
+
+#' Get pretty label for graphs
+#' 
+#' Find the correct label for a given parameter in paramList
+#' @param string param
+#' @param list paramList
+#' @return string label
+
+get_label <- function(param, paramList) {
+  # note "\\b" are word boundary anchors to only match the full param
+  # "\\<" and "\\>" could also be used for start and end
+  label <- names(unlist(paramList[grep(paste0("\\b", param, "\\b"), paramList)]))
+  return( label )
 }
 
 #' Time close
@@ -87,7 +101,6 @@ timeClose <- function(time1, time2, thresh=5) {
     return(FALSE)
   }
 }
-
 
 #' Start SQL
 #'
@@ -201,10 +214,16 @@ get_data <- function(connection, feeders_info, feeder_id=1, start_time="'2017-06
 	print(paste("Starting query for feeder ", feeder_id, sep=''))
 	queryRtn <- dbGetQuery(connection, queryStr)
 	if(feeders_info$phase_type[feeder_id]!=0) queryRtn <- calc_power(queryRtn)
+	
 	queryRtn['min_of_day'] <- as.integer(format(queryRtn$time_and_date, "%H"))*60 + as.integer(format(queryRtn$time_and_date, "%M"))
 	queryRtn['hour_of_day'] <- as.integer(format(queryRtn$time_and_date, "%H"))
 	queryRtn['day_of_week'] <- as.integer(format(queryRtn$time_and_date, "%u"))
-
+	queryRtn['day_of_month'] <- as.integer(format(queryRtn$time_and_date, "%e"))
+	queryRtn['day_of_year'] <- as.integer(format(queryRtn$time_and_date, "%j"))
+	
+	queryRtn['current_thd_magnitude'] <- queryRtn$current * queryRtn$current_thd/100
+	queryRtn['voltage_thd_magnitude'] <- queryRtn$voltage * queryRtn$voltage_thd/100
+	
 	voltages <- list(queryRtn$v1, queryRtn$v2, queryRtn$v3)
 	V_mean <- unlist(lapply(data.table::transpose(voltages), mean))
 	V_delta <- list(abs(voltages[[1]]-V_mean), abs(voltages[[2]]-V_mean), abs(voltages[[3]]-V_mean))
@@ -214,7 +233,9 @@ get_data <- function(connection, feeders_info, feeder_id=1, start_time="'2017-06
 	problem_phase <- (problem_phase %*% phase_ids)
 	problem_phase[!(problem_phase %in% phase_ids)] <- NA # if more than one phase is a problem, discard that point
 	queryRtn <- cbind(queryRtn, imbalance, problem_phase)
-
+  
+	queryRtn <- calc_kwh(queryRtn)
+	
 	print("Finished query!")
 	return(queryRtn)
 }
@@ -313,9 +334,9 @@ clean_stats <- function(stats_df) {
 #' @return data.frame containing time statistics data
 
 calc_time_stats <- function(data_df, time="hour") {
-	time_stats <- data_df %>%
-		mutate(DateTime = time_and_date) %>%
-		group_by(time = floor_date(time_and_date, unit=time)) %>%
+	time_stats <- data_df %>% 
+		mutate(DateTime = time_and_date) %>% 
+		group_by(dt = floor_date(time_and_date, unit=time)) %>% 
 		summarise_all(funs(
 			max=max(., na.rm=TRUE),
 			mean=mean(., na.rm=TRUE),
@@ -323,9 +344,16 @@ calc_time_stats <- function(data_df, time="hour") {
 			sd=sd(., na.rm=TRUE)
 			)
 		)
+
 	if (time == "hour") {
-		time_stats$hour_fac <- as.factor(hour(time_stats$hour))
+		time_stats$hour_fac <- as.factor(hour(time_stats$dt))
 	}
+	# throw out min and mean cumulative sum kWh, as these don't matter for cumsum - only max
+	if (length(data_df$kwh_cs) != 0) {
+	  time_stats$kwh_cs_mean <- time_stats$kwh_cs_max
+  	time_stats$kwh_cs_min <- time_stats$kwh_cs_max
+  }
+	time_stats$time_and_date <- time_stats$dt
 	return(time_stats)
 }
 
@@ -570,6 +598,117 @@ calc_power <- function(df, discard_negatives=TRUE) {
 	# probably unnecessary, but just in case, do same for Reac
 	# df$reac_power[!is.finite(df$reac_power)] <- 0
 	return(df)
+}
+
+#' Calculate kilowatt-hours
+#' 
+#' Calculate energy used in the form of kilowatt-hours kWh
+#' @param data.frame Feeder data with real_power and power_factor cols
+#' @param bool discard_negatives If TRUE, take absolute value of real_power
+#' @return data.frame Feeder data with new cols reac_power and app_power
+calc_kwh <- function(df, discard_negatives=TRUE) {
+  if(discard_negatives) df$real_power <- abs(df$real_power)
+  
+  td <- data.frame(df$time_and_date[1:(length(df$time_and_date)-1)])
+  colnames(td) <- 'shifted_time'
+  td0 <- data.frame(floor_date(td$shifted_time[1], 'day'))
+  colnames(td0) <- 'shifted_time'
+  td <- rbind(td0, td)
+  df <- cbind(df, td)
+  df$kwh <- df$real_power/1000 * as.numeric(seconds(df$time_and_date - df$shifted_time))/3600
+  df <- data.frame(df %>% group_by(day_of_year) %>% arrange(time_and_date) %>% mutate(kwh_cs = cumsum(kwh)))
+  return(df)
+}
+
+#' Check if new requests include cached data
+#' 
+#' First check to see if there is any previous data, then compare its shape to the new request, and optimise the request
+#' @param session session Shiny UI session object
+#' @param data.frame feeder_data New feeder data d$feeder_data
+#' @param data.frame stored_data Old feeder data d$stored_data
+#' @param data.frame feeders Feeder info d$feeders
+#' @param int feederNumber Feeder number input$feederNumber
+#' @return data.frame Feeder data
+cache_data <- function(session, feeder_data, stored_data, feeders, feederNumber) {
+  if(length(feeder_data) > 0) {
+    # decide if the query is new data or a subset of data already queried
+    if(length(stored_data) == 0){
+      stored_data <- feeder_data
+    } else if(length(feeder_data$time_and_date) > length(stored_data$time_and_date)){
+      stored_data <- feeder_data
+    }
+    sd1 <- min(stored_data$time_and_date)
+    ed1 <- max(stored_data$time_and_date)
+    sd2 <- ymd_hms(start_time)
+    ed2 <- ymd_hms(end_time)
+    
+    if(timeClose(sd2, sd1) && timeClose(ed2, ed1)){
+      # no need to do new query, just return previous results
+      # print("identical")
+      return_data <- stored_data
+    } else if((sd2 > ed1 && !timeClose(sd2, ed1)) || (ed2 < sd1 && !timeClose(ed2, sd1))){
+      # discard old data, perform a new query
+      # gets way too complicated otherwise!!
+      # print("noncontiguous")
+      stored_data <- data.frame()
+      return_data <- get_data(con, feeders, as.integer(feederNumber), format(sd2, "'%Y-%m-%d %H:%M:%S'"), format(ed2, "'%Y-%m-%d %H:%M:%S'"))
+      stored_data <- return_data
+    } else if(((sd2 >= sd1 || timeClose(sd2, sd1)) && (ed2 <= ed1 || timeClose(ed2, ed1)))){
+      # return subset between sd2 and ed2
+      # print("inside")
+      return_data <- stored_data[which(
+        ymd_hms(stored_data$time_and_date) >= sd2 & 
+          ymd_hms(stored_data$time_and_date) <= ed2),]
+    } else if(sd2 < sd1 && (ed2 <= ed1 || timeClose(ed1, ed2)) && (ed2 >= sd1 || timeClose(sd1, ed2)) ){
+      # perform new query between sd2 and sd1
+      # merge new query with previous results
+      # return subset between sd2 and ed2
+      # print("leftside")
+      new_data <- get_data(con, feeders, as.integer(feederNumber), format(sd2, "'%Y-%m-%d %H:%M:%S'"), format(sd1, "'%Y-%m-%d %H:%M:%S'"))
+      stored_data <- rbind(new_data, stored_data)
+      return_data <- stored_data[which(
+        ymd_hms(stored_data$time_and_date) >= sd2 & 
+          ymd_hms(stored_data$time_and_date) <= ed2),]
+    } else if(ed2 > ed1 && (sd2 >= sd1 || timeClose(sd1, sd2)) && (sd2 <= ed1 || timeClose(ed1, sd2))){
+      # perform new query between ed1 and ed2
+      # merge new query with previous results
+      # return subset between sd2 and ed2
+      # print("rightside")
+      new_data <- get_data(con, feeders, as.integer(feederNumber), format(ed1, "'%Y-%m-%d %H:%M:%S'"), format(ed2, "'%Y-%m-%d %H:%M:%S'"))
+      stored_data <- rbind(stored_data, new_data)
+      return_data <- stored_data[which(
+        ymd_hms(stored_data$time_and_date) >= sd2 & 
+          ymd_hms(stored_data$time_and_date) <= ed2),]
+    } else if(sd2 < sd1 && ed2 > ed1 && !timeClose(sd1, sd2) && !timeClose(ed1, ed2)){
+      # perform new query between sd2 and sd1 AND ed1 and ed2
+      # merge new query with previous results
+      # return subset between sd2 and ed2
+      # print("outside")
+      left_data <- get_data(con, feeders, as.integer(feederNumber), format(sd2, "'%Y-%m-%d %H:%M:%S'"), format(sd1, "'%Y-%m-%d %H:%M:%S'"))
+      right_data <- get_data(con, feeders, as.integer(feederNumber), format(ed1, "'%Y-%m-%d %H:%M:%S'"), format(ed2, "'%Y-%m-%d %H:%M:%S'"))
+      stored_data <- rbind(left_data, stored_data, right_data)
+      return_data <- stored_data[which(
+        ymd_hms(stored_data$time_and_date) >= sd2 & 
+          ymd_hms(stored_data$time_and_date) <= ed2),]
+    } else {
+      # Not sure how it would get to here, so just print the times and return the old data
+      print("???")
+      print("old times")
+      print(c(sd1, ed1))
+      print("new times")
+      print(c(sd2, ed2))
+      print("???")
+      print("")
+      return_data <- stored_data
+    }
+    feeder_data <- return_data
+    updateSliderInput(session, "dateRangeExtents",
+                      value=c(as.Date(ymd_hms(min(stored_data$time_and_date))),
+                              as.Date(ymd_hms(max(stored_data$time_and_date))))
+    )
+  }else{
+    feeder_data <- get_data(con, feeders, as.integer(feederNumber), start_time, end_time)
+  }
 }
 
 #' Default origin for POSIXlt dates
