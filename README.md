@@ -18,6 +18,7 @@ Electrical Analytics prototype user interface based on the R Shiny framework.
 * ``"ggalt"``  - Use ``devtools::install_github('hrbrmstr/ggalt')``
 * ``"dygraphs"``
 * ``"shinyjs"``
+* ``"RcppTOML"``
 
 ### How do I get set up? ###
 

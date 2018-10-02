@@ -109,16 +109,32 @@ timeClose <- function(time1, time2, thresh=5) {
 #' @return connection object
 
 start_sql <- function(db='local') {
+	library("RcppTOML")
+	config <- parseTOML("./config.toml")
+
 	# open connection
 	drv <- dbDriver("PostgreSQL")
-	pw <- ""
 	if(db == 'local') {
-		connection <- dbConnect(drv, dbname = "array_test_db", host = "localhost", port = 5432, user = "gsmserver", password = pw)
+		database <- config$main$database
+		login <- config$main$login
+		connection <- dbConnect(drv,
+					dbname = database$name,
+					host = database$host,
+					port = database$port,
+					user = login$user,
+					password = login$password)
 	}
 	else {
-		connection <- dbConnect(drv, dbname = "transformer_db", host = "transglobal.cloud.tilaa.com", port = 5432, user = "barry_read", password = pw)
+		database <- config$alternative$database
+		login <- config$alternative$login
+		connection <- dbConnect(drv,
+					dbname = database$name,
+					host = database$host,
+					port = database$port,
+					user = login$user,
+					password = login$password)
 	}
-	rm(pw) # removes the password
+	rm(config) # removes the config info
 	print(paste("Connection successful?", dbExistsTable(connection, "feeder_stats"), sep=" "))
 	return(connection)
 }
