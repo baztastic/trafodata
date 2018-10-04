@@ -300,10 +300,8 @@ shinyServer(function(input, output, session) {
         d$feeder_data <- d$feeder_data[which(d$feeder_data$temperature < 1000),]
         # d$feeder_data[which(d$feeder_data$current_thd == 64),]$current_thd <- NA
 
-        d$hourly_stats <- calc_hourly_stats(d$feeder_data)
-        d$daily_stats <- calc_daily_stats(d$feeder_data)
-        # d$hourly_stats <- calc_time_stats(d$feeder_data, 'hour')
-        # d$daily_stats <- calc_time_stats(d$feeder_data, 'day')
+        d$hourly_stats <- calc_time_stats(d$feeder_data, 'hour')
+        d$daily_stats <- calc_time_stats(d$feeder_data, 'day')
       },
         error=function(cond){
           print(cond)
@@ -811,7 +809,8 @@ shinyServer(function(input, output, session) {
     hourly_fill <- eval(parse(text = paste0("d$hourly_stats$", input$paramY, "_mean")))
 
     plot1 <- ggplot(d$hourly_stats, 
-      aes(as_date(d$hourly_stats$hour), d$hourly_stats$hour_fac)
+      aes(as_date(d$hourly_stats$time_and_date), d$hourly_stats$hour_fac)
+      # aes(as_date(d$hourly_stats$hour), d$hourly_stats$hour_fac)
       ) + 
       geom_tile(aes(fill=hourly_fill)) + 
       ylim(rev(levels(d$hourly_stats$hour_fac))) + 
@@ -831,11 +830,16 @@ shinyServer(function(input, output, session) {
 
   output$calendarplot <- renderPlot({
     if(input$queryBtn == 0) return(NULL)
-    # options for data to plot are min, max, avg, std
-    calPlot <- ggplot_calendar_heatmap(d$daily_stats, 'daily', paste0(input$paramY, '_mean')) + 
+    # options for data to plot are min, max, mean, sd
+    if(input$paramY == "kwh_cs") {
+      calendarTitle = paste("Daily", labelList[[input$paramY]], "\n", round(sum(d$daily_stats$kwh_cs_mean), digits=1), "kWh (Total for period)")
+    } else {
+      calendarTitle = paste0("Daily ", labelList[[input$paramY]])
+    }
+    calPlot <- ggplot_calendar_heatmap(d$daily_stats, 'time_and_date', paste0(input$paramY, '_mean')) + 
       xlab(NULL) + 
       ylab(NULL) + 
-      labs(title=paste0("Daily ", labelList[[input$paramY]])) +
+      labs(title=calendarTitle) +
       scale_fill_continuous(low=colors[3,1], high=colors[1,2])
 
     print(calPlot)

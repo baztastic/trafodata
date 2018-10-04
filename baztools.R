@@ -585,6 +585,7 @@ get_voltage_imbalance <- function(connection, feeder_id=1, start_time="'2017-06-
 #' @param bool discard_negatives If TRUE, take absolute value of real_power
 #' @return data.frame Feeder data with new cols reac_power and app_power
 calc_power <- function(df, discard_negatives=TRUE) {
+  if(length(df$real_power) == 0) return(df)
 	if(discard_negatives) df$real_power <- abs(df$real_power)
 
 	df$app_power <- df$real_power/df$power_factor
@@ -606,7 +607,7 @@ calc_power <- function(df, discard_negatives=TRUE) {
 #' @param bool discard_negatives If TRUE, take absolute value of real_power
 #' @return data.frame Feeder data with new cols reac_power and app_power
 calc_kwh <- function(df, discard_negatives=TRUE) {
-  if(discard_negatives) df$real_power <- abs(df$real_power)
+  # if(discard_negatives) df$real_power <- abs(df$real_power)
   
   td <- data.frame(df$time_and_date[1:(length(df$time_and_date)-1)])
   colnames(td) <- 'shifted_time'
