@@ -1,0 +1,21 @@
+[main]
+	
+	[main.login]
+	user = ""
+	password = ""
+	
+	[main.database]
+	name = ""
+	host = ""
+	port = 5432
+
+[alternative]
+
+	[alternative.login]
+	user = ""
+	password = ""
+	
+	[alternative.database]
+	name = ""
+	host = ""
+	port = 5432

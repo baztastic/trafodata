@@ -18,26 +18,29 @@ Electrical Analytics prototype user interface based on the R Shiny framework.
 * ``"ggalt"``  - Use ``devtools::install_github('hrbrmstr/ggalt')``
 * ``"dygraphs"``
 * ``"shinyjs"``
+* ``"RcppTOML"``
 
 ### How do I get set up? ###
 
 1. Install R from [r-project.org](https://www.r-project.org/).
 
-1. After installing R, clone this repo and install the dependencies using:
+2. libcurl and libproj dev packages are required under ubuntu. Install if necessary.
+
+3. After installing R, clone this repo and install the dependencies using:
 
         R -f install_deps.R
-    
-2. If that doesn't work, use ``install.packages([package_name])`` to manually install the packages listed above. See the note for ``ggTimeSeries`` and ``ggalt``.
 
-3. On linux, ``libpq-dev`` is required for RPostgreSQL, so (for ubuntu-like distros) run:
+4. If that doesn't work, use ``install.packages([package_name])`` to manually install the packages listed above. See the note for ``ggTimeSeries`` and ``ggalt``.
+
+5. On linux, ``libpq-dev`` is required for RPostgreSQL, so (for ubuntu-like distros) run:
 
         sudo apt install libpq-dev
 
-4. For local TCD access, open a tunnel to the database with this command:
+6. For local TCD access, open a tunnel to the database with this command:
 
         ssh -L 9000:localhost:5432 [username]@transglobal.cloud.tilaa.com
 
-5. Run the app:
+7. Run the app:
 
 * From the interpreter use ``shiny::runApp('path/to/repo')``
 * From the command line use ``R -e "shiny::runApp('path/to/repo', port=4815, launch.browser=TRUE)"``
