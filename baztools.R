@@ -109,13 +109,13 @@ timeClose <- function(time1, time2, thresh=5) {
 #' @return connection object
 
 start_sql <- function(db='local') {
-  require("RccTOML", quietly = TRUE)
-  if("RccTOML" %in% (.packages())) {
+  if("RcppTOML" %in% (installed.packages())){
+    require("RcppTOML")
     config <- parseTOML("./config.toml")
   }
   else {
     # fallback to yaml
-    library("yaml")
+    require("yaml")
     config <- read_yaml("./config.yaml")
   }
 
