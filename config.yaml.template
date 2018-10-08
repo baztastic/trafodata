@@ -1,0 +1,17 @@
+main:
+  login:
+    user:
+    password:
+  database:
+    name:
+    host: localhost
+    port: 9000
+alternative:
+  login:
+    user:
+    password:
+  database:
+    name: 
+    host: 
+    port: 5432
+

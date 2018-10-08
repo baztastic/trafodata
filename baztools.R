@@ -109,8 +109,15 @@ timeClose <- function(time1, time2, thresh=5) {
 #' @return connection object
 
 start_sql <- function(db='local') {
-	library("RcppTOML")
-	config <- parseTOML("./config.toml")
+  require("RccTOML", quietly = TRUE)
+  if("RccTOML" %in% (.packages())) {
+    config <- parseTOML("./config.toml")
+  }
+  else {
+    # fallback to yaml
+    library("yaml")
+    config <- read_yaml("./config.yaml")
+  }
 
 	# open connection
 	drv <- dbDriver("PostgreSQL")
