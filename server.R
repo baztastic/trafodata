@@ -1,6 +1,3 @@
-# for local TCD access, open tunnel to database with this command:
-# ssh -L 9000:localhost:5432 murphyb8@transglobal.cloud.tilaa.com
-
 # TODO:
 # Clustering with ggalt
 # Usability enhancements with shinyjs
@@ -32,7 +29,6 @@ Sys.setenv(TZ="UTC")
 library(ggpmisc) # use stat_poly_eq to show fitted equation
 
 # transformer feeders approximately grouped, neutrals omitted
-# feeder_list <- c(5,1,6, 9,7,8, 11,10,12)  # tf1
 # feeder_list <- c(33,34,35, 41,42,43, 45,46,47)  # tf6
 # feeder_list <- c(65,66,68, 70,69,71, 74,75,76)  # tf5
 
@@ -42,15 +38,7 @@ colors <- matrix(
   "#0C2139", "#4F90DC"),  #blue
   nrow=3, ncol=2, byrow=TRUE)
 
-# not used - defined in ui.R
-trafoSelectList<-list(
-  'Please select a transformer'="",
-  'Drogheda'='tf5',
-  'Limerick'='tf1',
-  'Oranmore'='tf6'
-  )
-
-# list of possible parameters from DB and calculated in baztools.R
+# list of possible parameters either queried from DB or calculated in baztools.R
 paramList <- list(
   "Time" = "time_and_date",
   "Current (A)" = "current",
@@ -87,7 +75,7 @@ for(i in 1:length(paramList)){
   }
 
 shinyServer(function(input, output, session) {
-  # declare data variables - actually reactive values now!
+  # declare reactive data variables
   d <- reactiveValues(
     feeder_data=data.frame(), 
     stored_data=data.frame(),
@@ -97,6 +85,7 @@ shinyServer(function(input, output, session) {
     )
 
   # shinyjs functions
+  # This is part of the hack to show the second slider with the previously queried dates
   disable(id="dateRangeExtents")
   
   # trying to disable lastpass fill
@@ -104,6 +93,7 @@ shinyServer(function(input, output, session) {
   runjs('document.getElementsByTagName("form")[0].setAttribute("data-lpignore", "");')
   runjs('document.getElementsByTagName("select")[0].setAttribute("data-lpignore", "");')
   
+  # watch for changes to the date slider, and date buttons
   observeEvent({
     input$dateRangeSlider
     }, ignoreInit=TRUE, {
@@ -113,7 +103,6 @@ shinyServer(function(input, output, session) {
       )
     }
   )
-
   observeEvent(input$backWeek,
     {updateSliderInput(session, "dateRangeSlider",
       value=c(as.Date(input$dateRangeSlider[1])-7,
@@ -154,7 +143,6 @@ shinyServer(function(input, output, session) {
     }
     # dates from selector
     start_date <- ymd(input$dateRange[1])
-    # end_date <- ymd(input$dateRange[2]+1)
     end_date <- ymd(input$dateRange[2])
     
     updateSliderInput(session, "dateRangeSlider",
@@ -204,7 +192,9 @@ shinyServer(function(input, output, session) {
                 tic("get_data")
               }
         d$feeders <- get_feeders(con)
-
+        
+        # This logic block cuts down on queries to the server - especially useful for large queries
+        # It checks to see if the data being requested already exists, or if a subset of it already exists
         if(length(d$feeder_data) > 0) {
           # decide if the query is new data or a subset of data already queried
           if(length(d$stored_data) == 0){
@@ -212,11 +202,12 @@ shinyServer(function(input, output, session) {
           } else if(length(d$feeder_data$time_and_date) > length(d$stored_data$time_and_date)){
             d$stored_data <- d$feeder_data
           }
-          sd1 <- min(d$stored_data$time_and_date)  # old
-          ed1 <- max(d$stored_data$time_and_date)  # old
-          sd2 <- ymd_hms(start_time)               # new
-          ed2 <- ymd_hms(end_time)                 # new
+          sd1 <- min(d$stored_data$time_and_date)  # old start time
+          ed1 <- max(d$stored_data$time_and_date)  # old end time
+          sd2 <- ymd_hms(start_time)               # new start time
+          ed2 <- ymd_hms(end_time)                 # new end time
           
+          # timeClose(time1, time2, thresh=5) checks whether two timestamps are within thresh minutes
           if(timeClose(sd2, sd1) && timeClose(ed2, ed1)){
             # no need to do new query, just return previous results
             # print("identical")
@@ -255,7 +246,7 @@ shinyServer(function(input, output, session) {
               ymd_hms(d$stored_data$time_and_date) >= sd2 & 
                 ymd_hms(d$stored_data$time_and_date) <= ed2),]
           } else if(sd2 < sd1 && ed2 > ed1 && !timeClose(sd1, sd2) && !timeClose(ed1, ed2)){
-            # perform new query between sd2 and sd1 AND ed1 and ed2
+            # perform two new queries between sd2 and sd1 AND ed1 and ed2
             # merge new query with previous results
             # return subset between sd2 and ed2
             # print("outside")
@@ -266,7 +257,7 @@ shinyServer(function(input, output, session) {
               ymd_hms(d$stored_data$time_and_date) >= sd2 & 
                 ymd_hms(d$stored_data$time_and_date) <= ed2),]
           } else {
-            # Not sure how it would get to here, so just print the times and return the old data
+            # It should not get to here, this will just catch weirdness, so just print the times and return the old data
             print("???")
             print("old times")
             print(c(sd1, ed1))
@@ -285,7 +276,7 @@ shinyServer(function(input, output, session) {
           d$feeder_data <- get_data(con, d$feeders, as.integer(input$feederNumber), start_time, end_time)
         }
 
-        
+        # log how long queries are taking
         if("tictoc" %in% (.packages())) {
                 timer <- toc()
                 days_int <- round(interval(ymd_hms(start_time), ymd_hms(end_time)) / days(1))
@@ -299,7 +290,8 @@ shinyServer(function(input, output, session) {
         # do some selection of data to remove outliers
         d$feeder_data <- d$feeder_data[which(d$feeder_data$temperature < 1000),]
         # d$feeder_data[which(d$feeder_data$current_thd == 64),]$current_thd <- NA
-
+        
+        # custom function to generate statistics summarised on a time increment e.g. 'hour' or 'day'
         d$hourly_stats <- calc_time_stats(d$feeder_data, 'hour')
         d$daily_stats <- calc_time_stats(d$feeder_data, 'day')
       },
@@ -317,6 +309,8 @@ shinyServer(function(input, output, session) {
 
   # build the data frame to be plotted
   subSampling <- reactive({
+    # for large datasets it may be nice to just take a random subsample to speed up plotting
+    # this is now forced for > 10000 data points just for sake of demo speed
     subsample <- input$n/100
     # build data frame
     if(input$normOption) {
@@ -324,15 +318,13 @@ shinyServer(function(input, output, session) {
       else x <- xdata()
       if(input$paramY != "time_and_date") y <- normalise(ydata())
       else y <- ydata()
-      # y <- normalise(ydata())
       df <- data.frame(x, y, coldata())
     }
     else {
       df <- data.frame(xdata(), ydata(), coldata())
     }
-    # df <- data.frame(xdata(), ydata(), coldata())
     if(input$paramCol == "time_and_date"){
-      # to have a continuous colour range, convert dt to integer
+      # to have a continuous colour range, convert datetime to integer
       df$coldata.. <- as.integer(df$coldata..)
     }
     # take a random subsample of the data
@@ -362,23 +354,18 @@ shinyServer(function(input, output, session) {
       'C1','C2','C3'
       )
 
-    # these are the date ranges that we have data for on each trafo
-    # TODO in future should be populated by database query?
+    # these are the date ranges that we have demo data for on each trafo
     date_ranges <- data.frame(stringsAsFactors=FALSE,
       row.names=c("tf1", "tf6", "tf5"),
-      # "min" = c("2017-01-01", "2017-06-14", "2017-08-23"),
-      # # "max" = c("2017-09-16", "2017-06-25", format.Date(today()))
-      # "max" = c(format.Date(today()), "2017-06-25", format.Date(today()))
       "min" = c("2019-05-01", "2019-05-01", "2019-05-01"),
-      # "max" = c("2017-09-16", "2017-06-25", format.Date(today()))
       "max" = c( "2019-05-31", "2019-05-31", "2019-05-31")
     )
-
+    
+    # Update the controls based on the chosen transformer - some may have different options
     updateSelectInput(session, "feederNumber",
       choices=feederSelectList[selected_trafo,],
       selected = feederSelectList[[selected_trafo,1]]
       )
-
     updateSliderInput(session, "dateRangeSlider",
       min=as.Date(date_ranges[selected_trafo, "min"]),
       max=as.Date(date_ranges[selected_trafo, "max"]),
@@ -391,14 +378,12 @@ shinyServer(function(input, output, session) {
       value=c(as.Date(ymd(date_ranges[selected_trafo, "max"])-4),
       as.Date(date_ranges[selected_trafo, "max"]))
     )
-    
     updateDateRangeInput(session, "dateRange",
       min=date_ranges[selected_trafo, "min"],
       max=date_ranges[selected_trafo, "max"],
       start=ymd(date_ranges[selected_trafo, "max"])-4,
       end=date_ranges[selected_trafo, "max"]
       )
-    
     updateSelectInput(session, "paramX",
                       choices = paramList,
                       selected = paramList[1]

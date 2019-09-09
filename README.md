@@ -36,13 +36,9 @@ Electrical Analytics prototype user interface based on the R Shiny framework.
 
         sudo apt install libpq-dev
 
-6. For local TCD access, open a tunnel to the database with this command:
-
-        ssh -L 9000:localhost:5432 [username]@transglobal.cloud.tilaa.com
-
 7. Run the app:
 
 * From the interpreter use ``shiny::runApp('path/to/repo')``
 * From the command line use ``R -e "shiny::runApp('path/to/repo', port=4815, launch.browser=TRUE)"``
 
-Note, the password for my db read-only user is hard-coded into ``baztools.R`` so please don't share it with anyone.
+**Note that database credentials are not included in the github source, for security reasons.**

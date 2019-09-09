@@ -1,8 +1,3 @@
-# devtools::use_package("RPostgreSQL")
-# devtools::use_package("ggplot2")
-# devtools::use_package("ggthemes")
-# devtools::use_package("lubridate")
-# devtools::use_package("dplyr")
 require("RPostgreSQL")
 require("ggplot2")
 require("ggthemes")
