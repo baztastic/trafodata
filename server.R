@@ -470,51 +470,11 @@ shinyServer(function(input, output, session) {
       if(input$plotType == "geom_point") p <- p + geom_point(aes(colour=df$coldata), alpha = input$alpha)
       if(input$plotType == "geom_line") p <- p + geom_line(aes(colour=df$coldata), alpha = input$alpha)
       
-      # TODO check whether arbitrary fitting is useful (or possible!)
-      # if(input$arbFitting != "") {
-      #   tryCatch({
-      #       attach(d) # so I can refer directly to x and y
-      #       myFormula <- eval(parse(text = input$arbFitting))
-      #       print(myFormula)
-      #       # p <- p + geom_smooth(method="loess", formula=myFormula)
-      #       # p <- p + stat_poly_eq(formula = myFormula,
-      #       #   aes(label = paste(..eq.label.., ..rr.label.., sep = "*plain(\",\")~")),
-      #       #   parse = TRUE)
-      #       regressor <- lm(formula = myFormula)
-      #       print(summary(regressor))
-      #       },
-      #       warning = function(w){
-      #         showNotification("Warning", duration=1, type='message')
-      #         return(NULL)
-      #       },
-      #       error = function(e){
-      #         showNotification("Invalid function. Must be of form y ~ x", duration=1, type='message')
-      #         return(NULL)
-      #       },
-      #       finally={
-      #         detach(d) # make sure d is detached so it won't mask future fits
-      #       }
-      #     )
-      #   }
-
-      # TODO implement grouping
-      # encircle <- TRUE
-      # d_select <- d$feeder_data[d$feeder_data$current_thd > 40,]
-      # if(encircle == TRUE) p <- p + geom_encircle(aes(x=input$paramX, y=input$paramY), data=d_select, color="red", size=2, expand=0)
     incProgress(1/6)
     # do some general setup on the plot (from baztools.R)
       p <- setup_plot(p, id)
     incProgress(1/6)
 
-      # TODO add a nice title
-      # p <- p + ggtitle(paste(input$trafoNumber, input$feederNumber))
-      # p <- p + ggtitle(paste(
-      #   names(trafoSelectList[which(trafoSelectList == input$trafoNumber)]), 
-      #   "Feeder",
-      #   input$feederNumber
-      #   ))
-      # browser()
-      
     incProgress(1/6)
       p <- p + theme(legend.position = "bottom")
       if(input$paramX != "time_and_date") p <- p + scale_x_continuous(trans=input$xScaleType)
@@ -529,11 +489,7 @@ shinyServer(function(input, output, session) {
                                                               title.hjust=0.5,
                                                               barwidth = 30)
       )
-      # print(p)  # show plot (doesn't work with hover tooltips)
-    # ggMarginal(p, type = "histogram", fill="transparent")
-
-    
-    p
+      p
       # incProgress(1/6)
     })
   })
@@ -591,15 +547,6 @@ shinyServer(function(input, output, session) {
       p <- setup_plot(p, id)
     incProgress(1/6)
 
-      # TODO add a nice title
-      # p <- p + ggtitle(paste(input$trafoNumber, input$feederNumber))
-      # p <- p + ggtitle(paste(
-      #   names(trafoSelectList[which(trafoSelectList == input$trafoNumber)]), 
-      #   "Feeder",
-      #   input$feederNumber
-      #   ))
-      # browser()
-      
     incProgress(1/6)
       p <- p + theme(legend.position = "bottom")
       if(input$paramX != "time_and_date") p <- p + scale_x_continuous(trans=input$xScaleType)
@@ -614,10 +561,7 @@ shinyServer(function(input, output, session) {
                                                               title.hjust=0.5,
                                                               barwidth = 30)
       )
-      # print(p)  # show plot (doesn't work with hover tooltips)
-    # ggMarginal(p, type = "histogram", fill="transparent")
-    
-    p
+      p
       # incProgress(1/6)
     })
   })
@@ -660,15 +604,6 @@ shinyServer(function(input, output, session) {
       p <- setup_plot(p, id)
     incProgress(1/6)
 
-      # TODO add a nice title
-      # p <- p + ggtitle(paste(input$trafoNumber, input$feederNumber))
-      # p <- p + ggtitle(paste(
-      #   names(trafoSelectList[which(trafoSelectList == input$trafoNumber)]), 
-      #   "Feeder",
-      #   input$feederNumber
-      #   ))
-      # browser()
-      
     incProgress(1/6)
       p <- p + theme(legend.position = "bottom")
       if(input$paramX != "time_and_date") p <- p + scale_x_continuous(trans=input$xScaleType)
@@ -682,14 +617,12 @@ shinyServer(function(input, output, session) {
                                                               title.hjust=0.5,
                                                               barwidth = 30)
       )
-      # print(p)  # show plot (doesn't work with hover tooltips)
-    # ggMarginal(p, type = "histogram", fill="transparent")
-
-    p
+      p
       # incProgress(1/6)
     })
   })
   
+  # render the DyGraph plot to compare different params simultaneously
   output$dygraph <- renderDygraph({
     btnPress <- input$queryBtn
     if(btnPress == 0) return(NULL)
@@ -699,7 +632,6 @@ shinyServer(function(input, output, session) {
     df <- d$feeder_data
     df <- unique(df)
     q <- data.frame(eval(parse(text = paste0("df$", input$paramY))), eval(parse(text = paste0("df$", input$paramCol))))
-    # browser()
     rownames(q) <- df$time_and_date
     colnames(q) <- c(input$paramY, input$paramCol)
     dygraph(q) %>% 
@@ -707,7 +639,6 @@ shinyServer(function(input, output, session) {
       dyShading(
         from = min(df$time_and_date), 
         to = max(df$time_and_date)
-        # color="white"
         ) %>%
       dyAxis("y", label=labelList[[input$paramY]]) %>%
       dyAxis("y2", label=labelList[[input$paramCol]], independentTicks = TRUE, drawGrid=FALSE) %>%
@@ -792,6 +723,7 @@ shinyServer(function(input, output, session) {
       )
   })
 
+  # render the hourly heatmap using geom_tile()
   output$hourlyplot <- renderPlot({
     if(input$queryBtn == 0) return(NULL)
     hourly_fill <- eval(parse(text = paste0("d$hourly_stats$", input$paramY, "_mean")))
@@ -816,6 +748,7 @@ shinyServer(function(input, output, session) {
     print(plot1)
   })
 
+  # render the calendar heatmap
   output$calendarplot <- renderPlot({
     if(input$queryBtn == 0) return(NULL)
     # options for data to plot are min, max, mean, sd
@@ -832,7 +765,8 @@ shinyServer(function(input, output, session) {
 
     print(calPlot)
   })
-
+  
+  # create the hover tooltips on the full resolution plot
   output$hover_info <- renderUI({
     if(input$queryBtn == 0 || nrow(d$feeder_data)==0) return(NULL)
     hover <- input$plot_hover
@@ -886,6 +820,7 @@ shinyServer(function(input, output, session) {
     )
   })
   session$onSessionEnded(function() {
+    # finally, when exiting, make sure that the database connection is released
     if(exists("con")){
       dbDisconnect(con)
     }
