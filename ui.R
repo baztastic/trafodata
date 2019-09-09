@@ -77,9 +77,9 @@ shinyUI(fluidPage(
   ),
   useShinyjs(),
   # Application title
-  titlePanel("Electrical Analytics"
+  titlePanel("Barry Murphy Electrical Analytics Demo"
              ),
-  actionButton("toggle", "Menu", width="90px"),
+  actionButton("toggle", "Hide Menu", width="90px"),
   sidebarLayout(
     # sidebar with controls
     conditionalPanel(

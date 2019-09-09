@@ -366,10 +366,13 @@ shinyServer(function(input, output, session) {
     # TODO in future should be populated by database query?
     date_ranges <- data.frame(stringsAsFactors=FALSE,
       row.names=c("tf1", "tf6", "tf5"),
-      "min" = c("2017-01-01", "2017-06-14", "2017-08-23"),
+      # "min" = c("2017-01-01", "2017-06-14", "2017-08-23"),
+      # # "max" = c("2017-09-16", "2017-06-25", format.Date(today()))
+      # "max" = c(format.Date(today()), "2017-06-25", format.Date(today()))
+      "min" = c("2019-05-01", "2019-05-01", "2019-05-01"),
       # "max" = c("2017-09-16", "2017-06-25", format.Date(today()))
-      "max" = c(format.Date(today()), "2017-06-25", format.Date(today()))
-      )
+      "max" = c( "2019-05-31", "2019-05-31", "2019-05-31")
+    )
 
     updateSelectInput(session, "feederNumber",
       choices=feederSelectList[selected_trafo,],
@@ -898,6 +901,8 @@ shinyServer(function(input, output, session) {
     )
   })
   session$onSessionEnded(function() {
-    dbDisconnect(con)
+    if(exists("con")){
+      dbDisconnect(con)
+    }
     })
 })

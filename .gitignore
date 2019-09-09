@@ -8,3 +8,8 @@ out.csv
 shiny_ui.RData
 *.pdf
 experiments/
+rstudio-server-246209-b4de5cd6e12f.json
+config.toml.tcd
+start_sql.sh
+cloud_sql_proxy
+.Rproj.user
