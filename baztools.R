@@ -267,13 +267,13 @@ calc_daily_stats <- function(data_df) {
 	daily_stats <- data_df %>% 
 		mutate(DateTime = time_and_date) %>% 
 		group_by(daily = as.Date(as_date(time_and_date))) %>% 
-		summarise_all(funs(
-			max=max(., na.rm=TRUE),
-			mean=mean(., na.rm=TRUE),
-			min=min(., na.rm=TRUE),
-			sd=sd(., na.rm=TRUE)
-			)
-		)
+	  summarise_all(.funs = list(
+	    ~ max(., na.rm=TRUE), 
+	    ~ mean(., na.rm=TRUE), 
+	    ~ min(., na.rm=TRUE), 
+	    ~ sd(., na.rm=TRUE)
+	    )
+	  )
 	daily_stats$time_and_date <- floor_date(daily_stats$time_and_date_min, unit="day")
 	# daily_stats <- clean_stats(daily_stats)
 	
@@ -290,13 +290,13 @@ calc_hourly_stats <- function(data_df) {
 	hourly_stats <- data_df %>% 
 		mutate(DateTime = time_and_date) %>% 
 		group_by(hour = floor_date(time_and_date, unit="hour")) %>% 
-		summarise_all(funs(
-			max=max(., na.rm=TRUE),
-			mean=mean(., na.rm=TRUE),
-			min=min(., na.rm=TRUE),
-			sd=sd(., na.rm=TRUE)
-			)
-		)
+	  summarise_all(.funs = list(
+	    ~ max(., na.rm=TRUE), 
+	    ~ mean(., na.rm=TRUE), 
+	    ~ min(., na.rm=TRUE), 
+	    ~ sd(., na.rm=TRUE)
+	  )
+	)
 	hourly_stats$time_and_date <- floor_date(hourly_stats$time_and_date_min, unit="hour")
 	hourly_stats$hour_fac <- as.factor(hour(hourly_stats$hour))
 	
@@ -354,13 +354,13 @@ calc_time_stats <- function(data_df, time="hour") {
 	time_stats <- data_df %>% 
 		mutate(DateTime = time_and_date) %>% 
 		group_by(dt = floor_date(time_and_date, unit=time)) %>% 
-		summarise_all(funs(
-			max=max(., na.rm=TRUE),
-			mean=mean(., na.rm=TRUE),
-			min=min(., na.rm=TRUE),
-			sd=sd(., na.rm=TRUE)
-			)
-		)
+	  summarise_all(.funs = list(
+	    ~ max(., na.rm=TRUE), 
+	    ~ mean(., na.rm=TRUE), 
+	    ~ min(., na.rm=TRUE), 
+	    ~ sd(., na.rm=TRUE)
+	  )
+	)
 
 	if (time == "hour") {
 		time_stats$hour_fac <- as.factor(hour(time_stats$dt))
